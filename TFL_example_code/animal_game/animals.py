@@ -13,22 +13,22 @@ class Plant(Food):
 
     def __init__(self, growth_mul: int):
         super().__init__("Plant")
-        self.cal = 0
+        self.cal_val = 0
         self.growth_mul = growth_mul
        
     def grow(self, growth_rate: int):
-        self.cal += self.growth_mul * growth_rate
+        self.cal_val += self.growth_mul * growth_rate
 
     def grazed(self) -> int:
-        g_cal = self.cal
-        self.cal -= self.cal
+        g_cal = self.cal_val
+        self.cal_val -= self.cal_val
         return g_cal
 
 class Meat(Food):
 
-    def __init__(self, food_type: str, cal:  int):
-        super().__init__(food_type)
-        self.cal = cal
+    def __init__(self, cal_val:  int):
+        super().__init__("Meat")
+        self.cal_val = cal_val
 
 class Animal(ABC):
 
@@ -50,7 +50,7 @@ class Animal(ABC):
     
 
 class Herbivore(Animal):
-    def __init__(self, cal_val: int = 500, move_cost = 50, meat_val: int = 300, max_move = 3):
+    def __init__(self, cal_val: int = 100, move_cost = 50, meat_val: int = 300, max_move = 3):
         super().__init__(move_cost, cal_val, max_move)
         self.meat_val = meat_val
     
@@ -61,17 +61,18 @@ class Herbivore(Animal):
         self.is_alive = False
         return Meat(self.meat_val)
 
+
 class Carnivore(Animal):
     
     def __init__(self, cal_val: int  = 100, move_cost: int = 100, max_move = 2) -> None:
         super().__init__(move_cost, cal_val, max_move)
     
     def eat(self, food: Meat):
-        self.cal_val += food.cal
+        self.cal_val += food.cal_val
 
 class Tile():
 
-    def __init__(self, contains: List[Animal], growth_mul: int):
+    def __init__(self, contains: List[Animal], growth_mul: int) -> tuple:
         self.growth_rate: int = randint(0,9)
         self.contains: List[Animal] = contains
         self.plant: Plant = Plant(growth_mul)
@@ -137,7 +138,8 @@ class Board():
         for i in range(height):
             for j in range(width): 
                 cur_tile = self.grid[i][j]
-                cur_tile.plant.grow() #First grow out plants
+                growth_rate = randint(1, 5) #generate random growth rate for this tile
+                cur_tile.plant.grow(growth_rate) #First grow out plants
 
                 self.feed_animals(cur_tile.contains, cur_tile)
 
@@ -165,6 +167,9 @@ class Board():
 
         return x_dist, y_dist, distance
 
+
+    #Currently first herbivore eats all food and first carnivore eats first herbivore which is kinda sus implementation. 
+    #Not sure I'll change it but thought I would note it.
     def feed_animals(self, animals: List[Animal], tile: Tile):
         for animal in animals:
             if type(animal) is Herbivore and animal.is_alive: #can't eat if dead
