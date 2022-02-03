@@ -76,4 +76,47 @@ class Tile():
     def get_num_by_type_animals(self):
         return a list containing number of herbivores and number of carnivores
 
+            
+class Board():
+
+    def __init__(self, height: int, width: int, growth_mul = 5, num_herb: int = 10, num_carni: int = 3):
+        self.corpse_count: int = 0
+        self.grid: List[List[Tile]] = height * [None]
+        self.height: int = height
+        self.width: int = width
+        self.create_board(growth_mul)
+        self.add_animals(num_herb, num_carni)
+
+    def create_board(self, growth_mul: int):
+        #creates board of tiles self.height by self.width
+
+    def add_animals(self, num_herb: int, num_carni: int):
+    randomly 
+
+    def cycle_day(self):
+    
+
+    def reset_animal_movement(self):
+       
+
+    def move_animal(self, animal: Animal, x_cord: int, y_cord: int) -> Tuple[int, int, int]:
+       
+
+    #Currently first herbivore eats all food and first carnivore eats first herbivore which is kinda sus implementation. 
+    #Not sure I'll change it but thought I would note it.
+    def feed_animals(self, animals: List[Animal], tile: Tile):
+       
+
+    def get_first_herbivore(self, animals: List[Animal]) -> Union[Herbivore, None]:
+        Find the first living herbivore in the list if it exists.
+ 
+    def move_all_animals_on_tile(self, animals: List[Animal], x_cord: int, y_cord: int) -> List[Tuple[int, int, int]]:
+        Move all animals on tile x_cord, y_cord, some random distance. 
+        returns list of tuple for x distance traveled, y distance traveled and total distance traveled for testing
+
+    def validate_move(self, move_dist: int, cur_pos: int, max_val: int) -> int:
+       Check if move is valid if not flip direction of move otherwise do nothing
+      
+#change contains to animals
+
 """

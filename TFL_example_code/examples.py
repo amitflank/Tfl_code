@@ -1,7 +1,4 @@
-def add_int(num1: int, num2: int)-> int:
-    pass
 
-a = 10
-a = a +5
-
-print(a)
+num_loops = 4
+for idx in range(num_loops):
+    print(idx)

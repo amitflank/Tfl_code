@@ -132,18 +132,75 @@ def test_feed_animals():
 
             assert tile_cal_vals == expected_cal_vals[i][j], "Expected {0} calorie distribution on tile at index {1}, {2}, but found {3}".format(expected_cal_vals[i][j], i, j, tile_cal_vals)
 
-
-
     print("Successfully fed the animals")
 
-def test_move_animals():
-    pass
+def adj_exp_positions(x_init: int, y_init: int, distances: List[Tuple[int, int, int]], expected_animals: List[List[List[int]]], animal_idxs: List[int]):
+    idx = 0
+    for x_dist, y_dist,  _  in distances:
+        exp_x_cord = x_init + x_dist
+        exp_y_cord = y_init + y_dist
+
+        try:
+            expected_animals[exp_y_cord][exp_x_cord][animal_idxs[idx]] += 1
+            expected_animals[y_init][x_init][animal_idxs[idx]] -= 1
+        except:
+            print(expected_animals)
+            print(animal_idxs)
+            raise ValueError(exp_y_cord, exp_x_cord, idx)
+
+        idx += 1
+
+def test_move_all_animals_on_tile():
+    expected_animals = [ 
+                        [
+                            [1, 0], [0, 0], [2, 0], [0, 0]],
+                            [[1, 1], [0, 0], [0, 2], [0, 0]],
+                            [[0, 2], [0, 0], [0, 0], [0, 0]],
+                            [[0, 0], [0, 0], [0, 0], [0, 0]]
+    ]
+
+    new_board = Board(height=4, width=4, num_herb= 0, num_carni = 0)
+
+    add_animals_to_tile(new_board.grid[0][0], 1, 0) #add 1 herbivore to tile 0,0
+    add_animals_to_tile(new_board.grid[0][2], 2, 0) #add 2 herbivore to tile 0,2
+    
+    add_animals_to_tile(new_board.grid[1][0], 2, 1) #add 2 herbivore to tile and 1 carnivore 1,0
+
+    add_animals_to_tile(new_board.grid[1][2], 1, 2) #add 1 herbivore 2 carnivore to tile 1,2
+    add_animals_to_tile(new_board.grid[2][0], 0, 2) #add 2 carnivore to tile 2,0
+
+    for row in range(4):
+        for col in range(4):
+            cur_tile_animals = new_board.grid[row][col].contains
+            copied_animals = cur_tile_animals.copy()
+
+            #Example of being to fancy for ones own good this is bad code. It is pretty dope though.
+            #Gets a list of 1's and 0's representing animals index's for herbivores and carnivores  
+            animal_index = [(lambda T: 0 if type(T) is Herbivore else 1)(animal) for animal in cur_tile_animals] 
+
+            distances = new_board.move_all_animals_on_tile(cur_tile_animals, row, col)
+            adj_exp_positions(col, row, distances, expected_animals, animal_index)
+
+            for idx, animal in enumerate(copied_animals):
+                
+                exp_cal = 100 - distances[idx][2] * animal.move_cost
+                assert animal.cal_val == exp_cal, "Expected animal to have {0} calories after moving but found {1} instead, {2}".format(exp_cal, animal.cal_val, distances[idx][2])
+
+    for row in range(3):
+        for col in range(3):
+            cur_tile = new_board.grid[row][col]
+            num_animals = cur_tile.get_num_by_type_animals() #Get number animals on tile
+
+            assert num_animals[0] == expected_animals[row][col][0], "Expected {0} herbivores on tile {1}, {2} but found {3}".format(expected_animals[row][col][0], row, col, num_animals[0])
+            assert num_animals[1] == expected_animals[row][col][1], "Expected {0} carnivores on tile {1}, {2} but found {3}".format(expected_animals[row][col][1], row, col, num_animals[1])
+
 
 
 random_board_create_test(20)
 test_add_animals(20)
 test_plant_growth()
 test_feed_animals()
+test_move_all_animals_on_tile()
 
 
 #Note we can talk about downside of efficient implementation of board loop on tests since it make it difficult to write clean tests for internal loop elements

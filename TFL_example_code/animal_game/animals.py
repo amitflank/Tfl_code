@@ -1,9 +1,13 @@
+from dis import dis
 from random import randint
 import re
+from turtle import width
 from typing import List, Union, Tuple
 
 from abc import ABC, abstractmethod
 
+
+#Note: Need to cheat and add min board size since we can easily get out of range issues w/small boards and current validate move implementation
 class Food():
 
     def __init__(self, food_type: str):
@@ -37,12 +41,17 @@ class Animal(ABC):
         self.cal_val = cal_val
         self.max_move = max_move
         self.is_alive = True
+        self.has_moved = False
 
     def move(self, distance: int):
         self.cal_val -= distance * self.move_cost
+        self.has_moved = True
 
     def legal_move(self, distance: int) -> bool:
         return distance <= self.max_move
+
+    def reset_movement(self):
+        self.has_moved = False
     
     @abstractmethod
     def eat(self, food: Food):
@@ -50,7 +59,7 @@ class Animal(ABC):
     
 
 class Herbivore(Animal):
-    def __init__(self, cal_val: int = 100, move_cost = 50, meat_val: int = 300, max_move = 3):
+    def __init__(self, cal_val: int = 100, move_cost = 50, meat_val: int = 300, max_move = 2):
         super().__init__(move_cost, cal_val, max_move)
         self.meat_val = meat_val
     
@@ -98,13 +107,14 @@ class Tile():
             
 class Board():
 
-    def __init__(self, height: int, width: int, growth_mul = 5, num_herb: int = 10, num_carni: int = 3):
+    def __init__(self, height: int, width: int, growth_mul = 5, num_herb: int = 10, num_carni: int = 3, days = 10):
         self.corpse_count: int = 0
         self.grid: List[List[Tile]] = height * [None]
         self.height: int = height
         self.width: int = width
         self.create_board(growth_mul)
         self.add_animals(num_herb, num_carni)
+        self.days: int = days
 
     def create_board(self, growth_mul: int):
         for i in range(self.height):
@@ -128,16 +138,18 @@ class Board():
             x_cord = randint(0, self.width - 1)
 
             self.grid[y_cord][x_cord].add_animal(Carnivore())
-
             
 
-    def cycle_day(self):
-        height = self.height
-        width = self.width
+    def run_game(self):
+        for day in range(self.days):
+            self.cycle_day()
 
-        for i in range(height):
-            for j in range(width): 
-                cur_tile = self.grid[i][j]
+    def cycle_day(self):
+        self.reset_animal_movement() #make sure all our animals are allowed to move
+
+        for row in range(self.height):
+            for col in range(self.width): 
+                cur_tile = self.grid[row][col]
                 growth_rate = randint(1, 5) #generate random growth rate for this tile
                 cur_tile.plant.grow(growth_rate) #First grow out plants
 
@@ -145,8 +157,15 @@ class Board():
 
                 #We can't actually eat after movement b/c we can move in any direction so some animals may miss feeding time if we do
                 #we would need to loop again. This is allowed but an intresting design decision. I like keeping my O(n) low so I'll flip it.
-                self.move_all_animals_on_tile(cur_tile.contains, i, j) 
+                self.move_all_animals_on_tile(cur_tile.contains, row, col) 
 
+    def reset_animal_movement(self):
+        for row in range(self.height):
+            for col in range(self.width):
+                animals = self.grid[row][col].contains
+
+                for animal in animals:
+                    animal.reset_movement()
 
     def move_animal(self, animal: Animal, x_cord: int, y_cord: int) -> Tuple[int, int, int]:
         distance = randint(0, animal.max_move)
@@ -180,7 +199,8 @@ class Board():
                     animal.eat(bambi.get_eaten()) 
                     
         #clean corpses
-        for animal in animals:
+        animals_copy =  animals.copy() #shallow copy to prevent pass by reference errors in loop
+        for animal in animals_copy:
             if not animal.is_alive:
                 animals.remove(animal)  #still sketch
                 self.corpse_count += 1
@@ -194,18 +214,29 @@ class Board():
         
         return None
 
-    def move_all_animals_on_tile(self, animals: List[Animal], x_cord: int, y_cord: int):
-        for animal in animals:
-            x_dist, y_dist, distance =  self.move_animal(animal, x_cord, y_cord)
-            animal.move(distance)
+    def move_all_animals_on_tile(self, animals: List[Animal], x_cord: int, y_cord: int) -> List[Tuple[int, int, int]]:
+        """Move all animals on tile x_cord, y_cord, some random distance. 
+        returns list of tuple for x distance traveled, y distance traveled and total distance traveled for testing"""
+        animals_copy =  animals.copy() #shallow copy to prevent pass by reference errors in loop
+        distances = []
 
-            if distance != 0:
-                animals.remove(animal) #kinda sketch please test
-            else:
-                self.grid[y_cord + y_dist][x_cord + x_dist].append(animal)
+        for animal in animals_copy:
+            if not animal.has_moved:
+                x_dist, y_dist, distance =  self.move_animal(animal, x_cord, y_cord)
+                animal.move(distance)
+
+                if distance != 0:
+                    animals.remove(animal) #kinda sketch please test
+                    self.grid[y_cord + y_dist][x_cord + x_dist].add_animal(animal)
         
+                distances.append((x_dist, y_dist, distance))
+        return distances
+    
     def validate_move(self, move_dist: int, cur_pos: int, max_val: int) -> int:
         """Check if move is valid if not flip direction of move otherwise do nothing"""
         if cur_pos + move_dist >= max_val or cur_pos + move_dist < 0:
             return -move_dist
         return move_dist
+
+
+#change contains to animals
