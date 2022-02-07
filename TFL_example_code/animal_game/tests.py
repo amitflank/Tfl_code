@@ -176,8 +176,17 @@ def test_move_all_animals_on_tile():
 
             #Example of being to fancy for ones own good this is bad code. It is pretty dope though.
             #Gets a list of 1's and 0's representing animals index's for herbivores and carnivores  
-            animal_index = [(lambda T: 0 if type(T) is Herbivore else 1)(animal) for animal in cur_tile_animals] 
 
+
+            #try using map here?
+            #create lambda fxn assign to var then pass w/list to map
+            #animal_index = [(lambda T: 0 if type(T) is Herbivore else 1)(animal) for animal in cur_tile_animals]
+            
+            test = (lambda T: 0 if type(T) is Herbivore else 1)
+            animal_index = map(test, cur_tile_animals)
+
+            print(animal_index)
+            
             distances = new_board.move_all_animals_on_tile(cur_tile_animals, row, col)
             adj_exp_positions(col, row, distances, expected_animals, animal_index)
 
@@ -200,7 +209,7 @@ random_board_create_test(20)
 test_add_animals(20)
 test_plant_growth()
 test_feed_animals()
-test_move_all_animals_on_tile()
+#test_move_all_animals_on_tile()
 
 
 #Note we can talk about downside of efficient implementation of board loop on tests since it make it difficult to write clean tests for internal loop elements
