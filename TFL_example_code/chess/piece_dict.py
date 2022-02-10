@@ -1,0 +1,35 @@
+piece_icons = {
+    "queen": "piece_pics/queen.png",
+    "pawn": "piece_pics/pawn.png",
+    "rook": "piece_pics/rook.png",
+    "king": "piece_pics/king.png",
+    "bishop": "piece_pics/bishop.jpg",
+    "knight": "piece_pics/knight.jpeg",
+}
+
+
+my_pieces = {
+    "black": {
+        "position": {
+            "rook": [(0, 0), (0, 7)],
+            "knight": [(0, 1), (0, 6)],
+            "bishop": [(0, 2), (0, 5)],
+            "queen":  [(0, 3)], 
+            "king":  [(0, 4)], 
+            "pawn": [(1, x) for x in range(8)]
+            },
+        "color": (0, 0, 0)
+        },
+        
+    "white": {
+        "position": {
+            "rook": [(7, 0), (7, 7)],
+            "knight": [(7, 1), (7, 6)],
+            "bishop": [(7, 2), (7, 5)],
+            "queen":  [(7, 3)], 
+            "king":  [(7, 4)],
+            "pawn": [(6, x) for x in range(8)] 
+            },
+        "color": (0, 0, 0)
+        }
+    }
