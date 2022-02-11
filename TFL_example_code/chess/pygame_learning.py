@@ -67,7 +67,7 @@ class Piece(pygame.sprite.Sprite):
         self.is_selected = False            
 
     def create_surface(self):
-        surf = pygame.image.load(self.piece_type).convert()
+        surf = pygame.image.load(piece_icons[self.color][self.piece_type]).convert()
         surf = pygame.transform.scale(surf, (self.height, self.width))
         surf.set_colorkey((255, 255, 255), RLEACCEL)
 
@@ -81,47 +81,93 @@ def get_piece_at_loc(row: int, col: int, pieces: List[Piece]) -> Union[Piece, No
 
     return None
 
+def is_legal_move(self, cur_row: int, cur_col: int, new_row: int, new_col: int, is_capture: bool):
+    pass
+
 class Pawn(Piece):
 
     def __init__(self, height: int, width: int, color: str):
         super().__init__(height, width, "pawn", color)
 
-    def is_legal_move(self, cur_row: int, cur_col: int, new_row: int, new_col: int, is_capture: bool):
+    def is_legal_move(self, new_row: int, new_col: int, is_capture: bool):
         """checks if given move satisfies legal move conditions for pawn. Does not check for pins or blocked movement"""
         valid_move = True
 
         if is_capture:
             if self.color is "black":
-                valid_row = (new_row == cur_row + 1)
+                valid_row = (new_row == self.row + 1)
             elif self.color is "white":
-                valid_row = (new_row == cur_row - 1)
+                valid_row = (new_row == self.row - 1)
             else:
                 raise ValueError("got illegal color {0}".format(self.color))
             
-            valid_col = (new_col == cur_col - 1 or new_col == cur_col + 1)
-            valid_move = valid_move and valid_row and valid_col
+            valid_col = abs(new_col  - self.col) == 1
+            valid_move = valid_row and valid_col
 
         else:
             if self.color is "black":
-                if self.cur_row == 1:
-                    valid_row = (new_row == cur_row + 1 or new_row == cur_row + 2)
+                if self.row == 1:
+                    valid_row = new_row - self.row <= 2
                 else:
-                    valid_row = (new_row == cur_row + 1)
+                    valid_row = new_row - self.row <= 1
                 
             if self.color is "white":
-                if self.cur_row == 6:
-                    valid_row = (new_row == cur_row - 1 or new_row == cur_row - 2)
+                if self.row == 6:
+                    valid_row =  self.row - new_row  <= 2
                 else:
-                    valid_row = (new_row == cur_row + 1)
+                    valid_row = self.row - new_row  <= 1
             
-            valid_col = (cur_col == new_col)
-            valid_capture = valid_move and valid_row and valid_col
+            valid_col = (self.col == new_col)
+            valid_move = valid_row and valid_col
 
-        return valid_capture
+        return valid_move
+
+class Bishop(Piece):
+    def __init__(self, height: int, width: int, color: str):
+        super().__init__(height, width, "bishop", color)
+
+    def is_legal_move(self, new_row: int, new_col: int, is_capture: bool):
+        return abs(new_row - self.row) == abs(new_col - self.col)
+
+class Rook(Piece):
+    def __init__(self, height: int, width: int, color: str):
+        super().__init__(height, width, "rook", color)
+
+    def is_legal_move(self, new_row: int, new_col: int, is_capture: bool):
+        vertical_move =  abs(new_row - self.row) > 0 and abs(new_col - self.col)  == 0
+        horizontal_move = abs(new_row - self.row) == 0  and abs(new_col - self.col) > 0
+        return vertical_move or horizontal_move
+
+class Queen(Piece):
+    def __init__(self, height: int, width: int, color: str):
+        super().__init__(height, width, "queen", color)
+    
+    def is_legal_move(self, new_row: int, new_col: int, is_capture: bool):
+        diagonal_move = abs(self.row - self.row) == abs(new_col - self.col)
+        vertical_move =  abs(new_row - self.row) > 0 and abs(new_col - self.col)  == 0
+        horizontal_move = abs(new_row - self.row) == 0  and abs(new_col - self.col) > 0
+        return diagonal_move or vertical_move or horizontal_move
+
+class Knight(Piece):
+    def __init__(self, height: int, width: int, color: str):
+        super().__init__(height, width, "knight", color)
+
+    def is_legal_move(self, new_row: int, new_col: int, is_capture: bool):
+        vertical_move = abs(new_row - self.row) == 2 and abs(new_col - self.col) == 1
+        horizontal_move = abs(new_row - self.row) == 1 and abs(new_col - self.col) == 2
+        return vertical_move or horizontal_move
+
+class King(Piece):
+    def __init__(self, height: int, width: int, color: str):
+        super().__init__(height, width, "king", color)
+
+    def is_legal_move(self, new_row: int, new_col: int, is_capture: bool):
+        return  abs(new_row - self.row) <= 1 and abs(new_col - self.col) <= 1
 
 class Board():
 
     def __init__(self, cell_size: int) -> None:
+        self.piece_key_map = {"queen": Queen, "king": King, "pawn": Pawn, "rook": Rook, "knight": Knight, "bishop": Bishop}
         self.turn = "white"
         self.cell_size = cell_size
         self.ROWS = 8
@@ -168,7 +214,7 @@ class Board():
         piece_list = []
         for piece, loc in my_pieces[color]["position"].items():
             for row, col in loc:
-                new_piece = Piece(cell_size, cell_size, piece_icons[color][piece], color) #create piece
+                new_piece = self.piece_key_map[piece](cell_size, cell_size, color) #create piece
                 new_piece.update_cell_position(row, col) #initialize proper board location
                 self.screen.blit(new_piece.surf, new_piece.rect) #add to board
                 piece_list.append(new_piece)
@@ -200,19 +246,20 @@ class Board():
     def move_selected_piece(self, row: int, col: int, is_capture: bool):
         cur_row, cur_col = self.selected_piece.row, self.selected_piece.col
 
-        #delete a piece if it gets captured
-        if is_capture:
-            self.draw_tile(self.cell_size, self.screen, row, col)
-            piece = get_piece_at_loc(row, col, self.pieces)
-            self.pieces.remove(piece)
-        
-        self.selected_piece.update_cell_position(row, col) #initialize proper board location
+        if self.selected_piece.is_legal_move(row, col, is_capture):
+            #delete a piece if it gets captured
+            if is_capture:
+                self.draw_tile(self.cell_size, self.screen, row, col)
+                piece = get_piece_at_loc(row, col, self.pieces)
+                self.pieces.remove(piece)
+            
+            self.selected_piece.update_cell_position(row, col) #initialize proper board location
 
-        self.screen.blit(self.selected_piece.surf, self.selected_piece.rect) #add to board
-        self.draw_tile(self.cell_size, self.screen, cur_row, cur_col)
-        self.selected_piece.de_select(self.screen)
-        self.selected_piece = None #deselect piece
-        self.flip_turn() #other player turn now
+            self.screen.blit(self.selected_piece.surf, self.selected_piece.rect) #add to board
+            self.draw_tile(self.cell_size, self.screen, cur_row, cur_col)
+            self.selected_piece.de_select(self.screen)
+            self.selected_piece = None #deselect piece
+            self.flip_turn() #other player turn now
 
 pygame.init()
 
