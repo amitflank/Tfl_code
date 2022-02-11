@@ -53,7 +53,7 @@ class Piece(pygame.sprite.Sprite):
         return [r1, r2, r3, r4]
 
     def select(self, screen: Surface):
-        "highllight piece and set it's is_selected property to True"
+        "highlight piece and set it's is_selected property to True"
         for r in self.derive_edges():
             self.surf.fill((255, 0, 0), r)
 
@@ -74,6 +74,43 @@ class Piece(pygame.sprite.Sprite):
 
         return surf
 
+class Pawn(Piece):
+
+    def __init__(self, height: int, width: int, color: str):
+        super().__init__(height, width, "pawn", color)
+
+    def is_legal_move(self, cur_row: int, cur_col: int, new_row: int, new_col: int, is_capture: bool):
+        """checks if given move satisfies legal move conditions for pawn. Does not check for pins or blocked movement"""
+        valid_move = True
+
+        if is_capture:
+            if self.color is "black":
+                valid_row = (new_row == cur_row + 1)
+            elif self.color is "white":
+                valid_row = (new_row == cur_row - 1)
+            else:
+                raise ValueError("got illegal color {0}".format(self.color))
+            
+            valid_col = (new_col == cur_col - 1 or new_col == cur_col + 1)
+            valid_move = valid_move and valid_row and valid_col
+
+        else:
+            if self.color is "black":
+                if self.cur_row == 1:
+                    valid_row = (new_row == cur_row + 1 or new_row == cur_row + 2)
+                else:
+                    valid_row = (new_row == cur_row + 1)
+                
+            if self.color is "white":
+                if self.cur_row == 6:
+                    valid_row = (new_row == cur_row - 1 or new_row == cur_row - 2)
+                else:
+                    valid_row = (new_row == cur_row + 1)
+            
+            valid_col = (cur_col == new_col)
+            valid_capture = valid_move and valid_row and valid_col
+
+        return valid_capture
 
 class Board():
 
@@ -99,14 +136,17 @@ class Board():
 
         return screen
 
+    def draw_tile(self, cell_size: int, screen: Surface, row: int, col: int):
+        if row % 2 == col % 2:
+            pygame.draw.rect(self.screen, (255,255,255), (col*cell_size, row*cell_size, cell_size, cell_size))
+        else:
+            pygame.draw.rect(self.screen, (0,0,0), (col*cell_size, row*cell_size, cell_size, cell_size))
+
     def draw_board(self, cell_size: int):
         """Draws alternating color chessboard with each tile being dims: cell_size by cell_size"""
         for row in range(self.ROWS):
             for col in range(self.COLS):
-                if row % 2 == col % 2:
-                    pygame.draw.rect(self.screen, (255,255,255), (row*cell_size, col*cell_size, cell_size, cell_size))
-                else:
-                    pygame.draw.rect(self.screen, (0,0,0), (row*cell_size, col*cell_size, cell_size, cell_size))
+               self.draw_tile(cell_size, self.screen, row, col)
     
     def load_color(self, cell_size: int, color: str) -> List[Piece]:
         """Loads all the starting pieces of specified color for start of the game. Returns a list all pieces (not ordered)"""
@@ -134,6 +174,16 @@ class Board():
             
         self.selected_piece = piece
         piece.select(self.screen)
+    
+    def move_selected_piece(self, row: int, col: int):
+        cur_row, cur_col = self.selected_piece.row, self.selected_piece.col
+        self.selected_piece.update_cell_position(row, col) #initialize proper board location
+        self.screen.blit(self.selected_piece.surf, self.selected_piece.rect) #add to board
+        self.draw_tile(self.cell_size, self.screen, cur_row, cur_col)
+        self.selected_piece.de_select(self.screen)
+        self.selected_piece = None
+
+       
 
 def get_piece_at_loc(row: int, col: int, pieces: List[Piece]) -> Union[Piece, None]:
     """takes a row and col and return the piece at specified location if it exists. Otherwise return None"""
@@ -142,6 +192,7 @@ def get_piece_at_loc(row: int, col: int, pieces: List[Piece]) -> Union[Piece, No
             return piece
 
     return None
+
 
 pygame.init()
 
@@ -171,6 +222,9 @@ while running:
 
             if piece:
                 new_board.handle_selection(piece)
+            else:
+                if new_board.selected_piece:
+                    new_board.move_selected_piece(row, col)
 
     pygame.display.flip()
 
