@@ -11,7 +11,6 @@ from pygame.locals import (
 
 from piece_dict import piece_icons, my_pieces
 
-    
 
 # The surface drawn on the screen is now an attribute of 'player'
 class Piece(pygame.sprite.Sprite):
@@ -74,6 +73,15 @@ class Piece(pygame.sprite.Sprite):
 
         return surf
 
+def get_piece_at_loc(row: int, col: int, pieces: List[Piece]) -> Union[Piece, None]:
+    """takes a row and col and return the piece at specified location if it exists. Otherwise return None"""
+    for piece in pieces:
+        if row == piece.row and col == piece.col:
+            return piece
+
+    return None
+
+
 class Pawn(Piece):
 
     def __init__(self, height: int, width: int, color: str):
@@ -115,6 +123,7 @@ class Pawn(Piece):
 class Board():
 
     def __init__(self, cell_size: int) -> None:
+        self.turn = "white"
         self.cell_size = cell_size
         self.ROWS = 8
         self.COLS = 8
@@ -122,8 +131,15 @@ class Board():
 
         self.screen = self.set_up_screen(cell_size)
         self.draw_board(cell_size)
-        self.load_pieces(cell_size)
+        self.pieces = self.load_pieces(cell_size)
 
+
+    def flip_turn(self):
+        if self.turn is "white":
+            self.turn = "black"
+        else:
+            self.turn = "white"
+        
     def set_up_screen(self, cell_size):
         """Create our screen object which we will be drawing on"""
         screen = Surface((cell_size * 8, cell_size * 8))
@@ -168,31 +184,36 @@ class Board():
         return black_pieces + white_pieces
 
 
-    def handle_selection(self, piece: Piece):
-        if self.selected_piece:
-            self.selected_piece.de_select(self.screen)
+    def handle_selection(self, piece: Piece) -> bool:
+        """handles piece selection and highlighting, returns a boolean if this is a capture attempt"""
+        if piece.color is self.turn:
+
+            if self.selected_piece:
+                self.selected_piece.de_select(self.screen)
             
-        self.selected_piece = piece
-        piece.select(self.screen)
+            self.selected_piece = piece
+            piece.select(self.screen)
+            return False
+        else:
+
+            if self.selected_piece:
+                return True
     
-    def move_selected_piece(self, row: int, col: int):
+    def move_selected_piece(self, row: int, col: int, is_capture: bool):
         cur_row, cur_col = self.selected_piece.row, self.selected_piece.col
+
+        if is_capture:
+            self.draw_tile(self.cell_size, self.screen, row, col)
+            piece = get_piece_at_loc(row, col, self.pieces)
+            self.pieces.remove(piece)
+        
         self.selected_piece.update_cell_position(row, col) #initialize proper board location
+
         self.screen.blit(self.selected_piece.surf, self.selected_piece.rect) #add to board
         self.draw_tile(self.cell_size, self.screen, cur_row, cur_col)
         self.selected_piece.de_select(self.screen)
         self.selected_piece = None
-
-       
-
-def get_piece_at_loc(row: int, col: int, pieces: List[Piece]) -> Union[Piece, None]:
-    """takes a row and col and return the piece at specified location if it exists. Otherwise return None"""
-    for piece in pieces:
-        if row == piece.row and col == piece.col:
-            return piece
-
-    return None
-
+        self.flip_turn()
 
 pygame.init()
 
@@ -202,7 +223,7 @@ new_board = Board(cellSize)
 # Run until the user asks to quit
 running = True
 
-pieces = new_board.load_pieces(cellSize)
+new_board.load_pieces(cellSize)
 
 while running:
 
@@ -214,17 +235,20 @@ while running:
         #Get mouse click event
         if event.type == pygame.MOUSEBUTTONDOWN:
             col_pos, row_pos = pygame.mouse.get_pos()
+            is_capture = False
 
             col = int(col_pos / cellSize)
             row = int(row_pos / cellSize)
             
-            piece = get_piece_at_loc(row, col, pieces) #check if there is a piece at mouseclick location
+            piece = get_piece_at_loc(row, col, new_board.pieces) #check if there is a piece at mouseclick location
 
             if piece:
-                new_board.handle_selection(piece)
+                is_capture = new_board.handle_selection(piece)
+                if is_capture:
+                    new_board.move_selected_piece(row, col, is_capture)
             else:
                 if new_board.selected_piece:
-                    new_board.move_selected_piece(row, col)
+                    new_board.move_selected_piece(row, col, is_capture)
 
     pygame.display.flip()
 
