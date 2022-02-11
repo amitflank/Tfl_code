@@ -81,7 +81,6 @@ def get_piece_at_loc(row: int, col: int, pieces: List[Piece]) -> Union[Piece, No
 
     return None
 
-
 class Pawn(Piece):
 
     def __init__(self, height: int, width: int, color: str):
@@ -194,14 +193,14 @@ class Board():
             self.selected_piece = piece
             piece.select(self.screen)
             return False
-        else:
-
+        else: #indicate a capture attempt
             if self.selected_piece:
                 return True
     
     def move_selected_piece(self, row: int, col: int, is_capture: bool):
         cur_row, cur_col = self.selected_piece.row, self.selected_piece.col
 
+        #delete a piece if it gets captured
         if is_capture:
             self.draw_tile(self.cell_size, self.screen, row, col)
             piece = get_piece_at_loc(row, col, self.pieces)
@@ -212,8 +211,8 @@ class Board():
         self.screen.blit(self.selected_piece.surf, self.selected_piece.rect) #add to board
         self.draw_tile(self.cell_size, self.screen, cur_row, cur_col)
         self.selected_piece.de_select(self.screen)
-        self.selected_piece = None
-        self.flip_turn()
+        self.selected_piece = None #deselect piece
+        self.flip_turn() #other player turn now
 
 pygame.init()
 
