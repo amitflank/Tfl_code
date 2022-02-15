@@ -23,6 +23,7 @@ class Piece(pygame.sprite.Sprite):
         self.col: int = 0 
         self.height: int = height
         self.width: int = width
+        self.has_moved = False
 
         self.surf: Surface = self.create_surface()
         self.rect = self.surf.get_rect()
@@ -81,9 +82,6 @@ def get_piece_at_loc(row: int, col: int, pieces: List[Piece]) -> Union[Piece, No
 
     return None
 
-def is_legal_move(self, cur_row: int, cur_col: int, new_row: int, new_col: int, is_capture: bool):
-    pass
-
 class Pawn(Piece):
 
     def __init__(self, height: int, width: int, color: str):
@@ -121,6 +119,21 @@ class Pawn(Piece):
             valid_move = valid_row and valid_col
 
         return valid_move
+    
+    def get_move_path(self, new_row: int, new_col: int):
+        path = []
+
+
+        if abs(new_row - self.row) > 1:
+            row_unit = (new_row - self.row) // abs(new_row - self.row) 
+
+            for i in range(abs(new_row - self.row)):
+
+                row = self.row + row_unit * (i + 1)
+                path.append((row, self.col))
+        
+        print(path, new_row, self.row)
+        return path
 
 class Bishop(Piece):
     def __init__(self, height: int, width: int, color: str):
@@ -128,6 +141,20 @@ class Bishop(Piece):
 
     def is_legal_move(self, new_row: int, new_col: int, is_capture: bool):
         return abs(new_row - self.row) == abs(new_col - self.col)
+    
+    def get_move_path(self, new_row: int, new_col: int):
+        """assumes you have checked legal move so will break if not"""
+        row_unit = (new_row - self.row) / abs(new_row - self.row) 
+        col_unit = (new_col - self.col) / abs(new_col - self.col)
+
+        path = []
+
+        for i in range(abs(new_row - self.row)):
+            row = self.row + row_unit * (i + 1)
+            col = self.col + col_unit * (i + 1)
+            path.append((row, col))
+
+        return path
 
 class Rook(Piece):
     def __init__(self, height: int, width: int, color: str):
@@ -137,16 +164,72 @@ class Rook(Piece):
         vertical_move =  abs(new_row - self.row) > 0 and abs(new_col - self.col)  == 0
         horizontal_move = abs(new_row - self.row) == 0  and abs(new_col - self.col) > 0
         return vertical_move or horizontal_move
+    
+    def get_move_path(self, new_row: int, new_col: int):
+        path = []
+
+        if  abs(new_row - self.row) == 0: #horizontal move
+            unit_move = (new_col - self.col) / abs(new_col - self.col)
+
+            for i in range(abs(new_col - self.col)):
+                col = self.col + unit_move * (i + 1)
+                path.append((self.row, col)) #row stays same so we can use self.row for all elements in path
+        else:
+            unit_move = (new_row - self.row) / abs(new_row - self.row)
+
+            for i in range(abs(new_row - self.row)):
+                row = self.row + unit_move * (i + 1)
+                path.append((row, self.col)) #col stays same so we can use self.row for all elements in path
+        
+        return path
+
+
 
 class Queen(Piece):
     def __init__(self, height: int, width: int, color: str):
         super().__init__(height, width, "queen", color)
     
     def is_legal_move(self, new_row: int, new_col: int, is_capture: bool):
-        diagonal_move = abs(self.row - self.row) == abs(new_col - self.col)
+        diagonal_move = abs(new_row - self.row) == abs(new_col - self.col)
         vertical_move =  abs(new_row - self.row) > 0 and abs(new_col - self.col)  == 0
         horizontal_move = abs(new_row - self.row) == 0  and abs(new_col - self.col) > 0
         return diagonal_move or vertical_move or horizontal_move
+
+    def get_move_path(self, new_row: int, new_col: int):
+        """very ugly lot of refactoring potential with reuse across classes and similar code"""
+        path = []
+
+        diagonal_move = abs(new_row - self.row) == abs(new_col - self.col)
+        vertical_move =  abs(new_row - self.row) > 0 and abs(new_col - self.col)  == 0
+        horizontal_move = abs(new_row - self.row) == 0  and abs(new_col - self.col) > 0
+
+        if diagonal_move:
+                  
+            row_unit = (new_row - self.row) / abs(new_row - self.row) 
+            col_unit = (new_col - self.col) / abs(new_col - self.col)
+
+            for i in range(abs(new_row - self.row)):
+                row = self.row + row_unit * (i + 1)
+                col = self.col + col_unit * (i + 1)
+                path.append((row, col))
+    
+        elif horizontal_move:
+            unit_move = (new_col - self.col) / abs(new_col - self.col)
+
+            for i in range(abs(new_col - self.col)):
+                col = self.col + unit_move * (i + 1)
+                path.append((self.row, col)) #row stays same so we can use self.row for all elements in path
+        
+        elif vertical_move: 
+            unit_move = (new_row - self.row) / abs(new_row - self.row)
+
+            for i in range(abs(new_row - self.row)):
+                row = self.row + unit_move * (i + 1)
+                path.append((row, self.col)) #col stays same so we can use self.row for all elements in path
+        else:
+            raise ValueError("got invalid move type")
+        
+        return path
 
 class Knight(Piece):
     def __init__(self, height: int, width: int, color: str):
@@ -155,7 +238,10 @@ class Knight(Piece):
     def is_legal_move(self, new_row: int, new_col: int, is_capture: bool):
         vertical_move = abs(new_row - self.row) == 2 and abs(new_col - self.col) == 1
         horizontal_move = abs(new_row - self.row) == 1 and abs(new_col - self.col) == 2
-        return vertical_move or horizontal_move
+        return vertical_move or horizontal_move   
+
+    def get_move_path(self, new_row: int, new_col: int):
+        return []
 
 class King(Piece):
     def __init__(self, height: int, width: int, color: str):
@@ -163,6 +249,9 @@ class King(Piece):
 
     def is_legal_move(self, new_row: int, new_col: int, is_capture: bool):
         return  abs(new_row - self.row) <= 1 and abs(new_col - self.col) <= 1
+    
+    def get_move_path(self, new_row: int, new_col: int):
+        return []
 
 class Board():
 
@@ -243,10 +332,41 @@ class Board():
             if self.selected_piece:
                 return True
     
+    def get_unblocked_path(self, row: int, col: int, piece: Piece):
+        path = piece.get_move_path(row, col)
+        unblocked_path = []
+
+        for cur_row, cur_col in path:
+            blocking_piece = get_piece_at_loc(cur_row, cur_col, self.pieces)
+
+            if blocking_piece:
+                if blocking_piece.color is not piece.color:
+                    #if piece color doesn't match we can capture so it's valid and added . 
+                    #We check pawn excpetion in it's move logic so we don't have a bug here for that special case
+                    unblocked_path.append((cur_row, cur_col)) 
+                break #once we hit a pice we are done 
+
+            unblocked_path.append((cur_row, cur_col))
+
+        return unblocked_path
+
+
+    def location_unblocked(self, row: int, col: int, piece: Piece):
+        path = piece.get_move_path(row, col)
+
+        if not path: #if list is empty this piece doesn't care about blockers
+            return True
+        else:
+            legal_path = self.get_unblocked_path(row, col, piece)
+            return (row, col) in legal_path
+
+
     def move_selected_piece(self, row: int, col: int, is_capture: bool):
         cur_row, cur_col = self.selected_piece.row, self.selected_piece.col
+        location_unblocked = self.location_unblocked(row, col, self.selected_piece)
 
-        if self.selected_piece.is_legal_move(row, col, is_capture):
+        print(location_unblocked)
+        if self.selected_piece.is_legal_move(row, col, is_capture) and location_unblocked:
             #delete a piece if it gets captured
             if is_capture:
                 self.draw_tile(self.cell_size, self.screen, row, col)
