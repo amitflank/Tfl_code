@@ -86,6 +86,11 @@ class Pawn(Piece):
 
     def __init__(self, height: int, width: int, color: str):
         super().__init__(height, width, "pawn", color)
+        self.legal_en_passe = False
+    
+    def update_en_passe(self, new_row):
+        if abs(self.row - new_row) ==  2:
+            self.legal_en_passe = True
 
     def is_legal_move(self, new_row: int, new_col: int, is_capture: bool):
         """checks if given move satisfies legal move conditions for pawn. Does not check for pins or blocked movement"""
@@ -104,16 +109,19 @@ class Pawn(Piece):
 
         else:
             if self.color is "black":
+                move = new_row - self.row 
                 if self.row == 1:
-                    valid_row = new_row - self.row <= 2
+                    valid_row = move <= 2 and move >= 0 
                 else:
-                    valid_row = new_row - self.row <= 1
+                    valid_row = move <= 1 and move >= 0 
                 
             if self.color is "white":
-                if self.row == 6:
-                    valid_row =  self.row - new_row  <= 2
+                move =  self.row - new_row 
+
+                if self.row == 6:    
+                    valid_row =  move  <= 2 and move >= 0 
                 else:
-                    valid_row = self.row - new_row  <= 1
+                    valid_row = move  <= 1 and move >= 0 
             
             valid_col = (self.col == new_col)
             valid_move = valid_row and valid_col
@@ -132,7 +140,6 @@ class Pawn(Piece):
                 row = self.row + row_unit * (i + 1)
                 path.append((row, self.col))
         
-        print(path, new_row, self.row)
         return path
 
 class Bishop(Piece):
@@ -159,6 +166,7 @@ class Bishop(Piece):
 class Rook(Piece):
     def __init__(self, height: int, width: int, color: str):
         super().__init__(height, width, "rook", color)
+        self.has_moved = False
 
     def is_legal_move(self, new_row: int, new_col: int, is_capture: bool):
         vertical_move =  abs(new_row - self.row) > 0 and abs(new_col - self.col)  == 0
@@ -227,7 +235,7 @@ class Queen(Piece):
                 row = self.row + unit_move * (i + 1)
                 path.append((row, self.col)) #col stays same so we can use self.row for all elements in path
         else:
-            raise ValueError("got invalid move type")
+            pass #do nothing if we get a bad move
         
         return path
 
@@ -246,6 +254,7 @@ class Knight(Piece):
 class King(Piece):
     def __init__(self, height: int, width: int, color: str):
         super().__init__(height, width, "king", color)
+        self.has_moved = False
 
     def is_legal_move(self, new_row: int, new_col: int, is_capture: bool):
         return  abs(new_row - self.row) <= 1 and abs(new_col - self.col) <= 1
@@ -360,18 +369,53 @@ class Board():
             legal_path = self.get_unblocked_path(row, col, piece)
             return (row, col) in legal_path
 
+    def update_pawn_en_passe_status(self):
+        for piece in self.pieces:
+            if type(piece) is Pawn and piece.color == self.turn:
+                piece.legal_en_passe = False
 
-    def move_selected_piece(self, row: int, col: int, is_capture: bool):
+    def check_en_passe(self, row, col):
+        cap_row = row
+        if type(self.selected_piece) is Pawn:
+            if self.turn is "black":
+                cap_row -= 1
+            else:
+                cap_row += 1
+
+            print(cap_row, self.turn)
+            piece = get_piece_at_loc(cap_row, col, self.pieces)
+            if piece:
+                print(piece)
+                return type(piece) is Pawn and piece.legal_en_passe
+            
+            return False
+        return False
+
+    def en_passe_capture(self, row) -> int:
+        cap_row = row
+        if self.turn is "black":
+            cap_row -= 1
+        else:
+            cap_row += 1
+        return cap_row
+
+    def move_selected_piece(self, row: int, col: int, is_capture: bool, is_en_passe: bool):
         cur_row, cur_col = self.selected_piece.row, self.selected_piece.col
         location_unblocked = self.location_unblocked(row, col, self.selected_piece)
 
-        print(location_unblocked)
         if self.selected_piece.is_legal_move(row, col, is_capture) and location_unblocked:
             #delete a piece if it gets captured
             if is_capture:
-                self.draw_tile(self.cell_size, self.screen, row, col)
-                piece = get_piece_at_loc(row, col, self.pieces)
+                cap_row = row
+                if is_en_passe:
+                    cap_row = self.en_passe_capture(row)
+
+                self.draw_tile(self.cell_size, self.screen, cap_row, col)
+                piece = get_piece_at_loc(cap_row, col, self.pieces)
                 self.pieces.remove(piece)
+            
+            if type(self.selected_piece) is Pawn:
+                self.selected_piece.update_en_passe(row)
             
             self.selected_piece.update_cell_position(row, col) #initialize proper board location
 
@@ -380,6 +424,7 @@ class Board():
             self.selected_piece.de_select(self.screen)
             self.selected_piece = None #deselect piece
             self.flip_turn() #other player turn now
+            self.update_pawn_en_passe_status() #we reset en passe status at start of turn
 
 pygame.init()
 
@@ -402,6 +447,7 @@ while running:
         if event.type == pygame.MOUSEBUTTONDOWN:
             col_pos, row_pos = pygame.mouse.get_pos()
             is_capture = False
+            is_en_passe = False
 
             col = int(col_pos / cellSize)
             row = int(row_pos / cellSize)
@@ -411,10 +457,14 @@ while running:
             if piece:
                 is_capture = new_board.handle_selection(piece)
                 if is_capture:
-                    new_board.move_selected_piece(row, col, is_capture)
+                    new_board.move_selected_piece(row, col, is_capture, is_en_passe)
             else:
                 if new_board.selected_piece:
-                    new_board.move_selected_piece(row, col, is_capture)
+                    is_en_passe = new_board.check_en_passe(row, col)
+                    if is_en_passe:
+                        new_board.move_selected_piece(row, col, True, is_en_passe)
+                    else:
+                        new_board.move_selected_piece(row, col, is_capture, is_en_passe)
 
     pygame.display.flip()
 
