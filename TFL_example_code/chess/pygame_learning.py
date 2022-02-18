@@ -1,4 +1,7 @@
 from typing import List, Union
+from copy import deepcopy
+import itertools
+from numpy import diag
 
 # Import and initialize the pygame library
 import pygame
@@ -16,6 +19,7 @@ from piece_dict import piece_icons, my_pieces
 class Piece(pygame.sprite.Sprite):
     def __init__(self, height: int, width: int, piece_type: str, color: str):
         super(Piece, self).__init__()
+        self.attacked_tiles = []
         self.color = color
         self.piece_type = piece_type
         self.is_selected = False
@@ -27,6 +31,12 @@ class Piece(pygame.sprite.Sprite):
 
         self.surf: Surface = self.create_surface()
         self.rect = self.surf.get_rect()
+
+    def is_legal_row_and_col(self, row, col):
+        """check if passed row and col are both inside a legal chess board"""
+        legal_row = row <= 7 and row >= 0
+        legal_col  = col <= 7 and col >= 0
+        return legal_col and legal_row
 
     def get_row_and_col_offset(self, row: int, col: int):
         row_offset = row * self.height
@@ -73,6 +83,9 @@ class Piece(pygame.sprite.Sprite):
         surf.set_colorkey((255, 255, 255), RLEACCEL)
 
         return surf
+    
+    def get_attacked_tiles(self):
+        a = 1
 
 def get_piece_at_loc(row: int, col: int, pieces: List[Piece]) -> Union[Piece, None]:
     """takes a row and col and return the piece at specified location if it exists. Otherwise return None"""
@@ -91,6 +104,20 @@ class Pawn(Piece):
     def update_en_passe(self, new_row):
         if abs(self.row - new_row) ==  2:
             self.legal_en_passe = True
+    
+    def get_attacked_tiles(self, board = None):
+        self.attacked_tiles = []
+        if self.col > 0:
+            if self.color is "black":
+                self.attacked_tiles.append((self.row + 1, self.col - 1))
+            else:
+                self.attacked_tiles.append((self.row - 1, self.col - 1))
+
+        if self.col < 7:
+            if self.color is "black":
+                self.attacked_tiles.append((self.row + 1, self.col + 1))
+            else:
+                self.attacked_tiles.append((self.row - 1, self.col + 1))
 
     def is_legal_move(self, new_row: int, new_col: int, is_capture: bool):
         """checks if given move satisfies legal move conditions for pawn. Does not check for pins or blocked movement"""
@@ -162,6 +189,30 @@ class Bishop(Piece):
             path.append((row, col))
 
         return path
+    
+    def get_attacked_tiles(self, board):
+        attacked_tiles = []
+
+        legal_diag_moves = [-1, 1] 
+        unit_moves = list(itertools.product(legal_diag_moves, repeat=2))
+
+        for row_move, col_move in unit_moves:
+            legal_move = True
+            new_row = self.row
+            new_col = self.col
+
+            while(legal_move):
+
+                if self.is_legal_row_and_col(new_row + row_move, new_col + col_move):
+                    new_row = self.row + row_move 
+                    new_col = self.col + col_move 
+                else:
+                    legal_move = False
+
+            attacked_tiles += board.get_unblocked_path(new_row, new_col, self)
+
+        return attacked_tiles
+
 
 class Rook(Piece):
     def __init__(self, height: int, width: int, color: str):
@@ -190,6 +241,18 @@ class Rook(Piece):
                 path.append((row, self.col)) #col stays same so we can use self.row for all elements in path
         
         return path
+    
+    #This is such bad design breaks so much game logic and coding principles. piece should net depend on board
+    def get_attacked_tiles(self, board):
+        #make this an iterable loop (lambda fxn) map? want combinations not permutations
+        #gets vertical horizontal movement
+        attacked_tiles = [] 
+        attacked_tiles += board.get_unblocked_path(7, self.col, self)
+        attacked_tiles +=  board.get_unblocked_path(0, self.col, self)
+        attacked_tiles +=  board.get_unblocked_path(self.row, 7, self)
+        attacked_tiles += board.get_unblocked_path(self.row, 0, self)
+
+        return attacked_tiles
 
 
 
@@ -238,6 +301,36 @@ class Queen(Piece):
             pass #do nothing if we get a bad move
         
         return path
+    
+    #This is such bad design breaks so much game logic and coding principles. piece should net depend on board
+    def get_attacked_tiles(self, board):
+        #make this an iterable loop (lambda fxn) map? want combinations not permutations
+        #gets vertical horizontal movement
+        attacked_tiles = [] 
+        attacked_tiles += board.get_unblocked_path(7, self.col, self)
+        attacked_tiles +=  board.get_unblocked_path(0, self.col, self)
+        attacked_tiles +=  board.get_unblocked_path(self.row, 7, self)
+        attacked_tiles += board.get_unblocked_path(self.row, 0, self)
+
+        legal_diag_moves = [-1, 1] 
+        unit_moves = list(itertools.product(legal_diag_moves, repeat=2))
+
+        for row_move, col_move in unit_moves:
+            legal_move = True
+            new_row = self.row
+            new_col = self.col
+
+            while(legal_move):
+
+                if self.is_legal_row_and_col(new_row + row_move, new_col + col_move):
+                    new_row = self.row + row_move 
+                    new_col = self.col + col_move 
+                else:
+                    legal_move = False
+
+            attacked_tiles += board.get_unblocked_path(new_row, new_col, self)
+
+        return attacked_tiles
 
 class Knight(Piece):
     def __init__(self, height: int, width: int, color: str):
@@ -251,6 +344,19 @@ class Knight(Piece):
     def get_move_path(self, new_row: int, new_col: int):
         return []
 
+    def get_attacked_tiles(self, board = None):
+        self.attacked_tiles = []
+        legal_moves = [-2, -1, 1, 2] #legal row col move values for a knight
+        output_list = list(itertools.product(legal_moves, repeat=2))
+
+        for row, col in output_list:
+            new_row = self.row + row 
+            new_col = self.col + col
+
+            valid_combo = abs(row) != abs(col)
+            if self.is_legal_row_and_col(new_row, new_col) and valid_combo:
+                self.attacked_tiles.append((self.row + row, self.col + col))
+
 class King(Piece):
     def __init__(self, height: int, width: int, color: str):
         super().__init__(height, width, "king", color)
@@ -262,6 +368,22 @@ class King(Piece):
     def get_move_path(self, new_row: int, new_col: int):
         return []
 
+    def get_attacked_tiles(self, board = None):
+        self.attacked_tiles = []
+
+        #get all row col combonition of legal king movements
+        test_list = [range(-1, 2),range(-1,2)] 
+        output_list = list(itertools.product(*test_list))
+        output_list.remove((0,0)) # we don't want no movement included
+
+
+        for row, col in output_list:
+            new_row = self.row + row 
+            new_col = self.col + col
+            if self.is_legal_row_and_col(new_row, new_col):
+                self.attacked_tiles.append((self.row + row, self.col + col))
+
+
 class Board():
 
     def __init__(self, cell_size: int) -> None:
@@ -271,11 +393,12 @@ class Board():
         self.ROWS = 8
         self.COLS = 8
         self.selected_piece = None
+        self.sorted_pieces = deepcopy(my_pieces)
 
         self.screen = self.set_up_screen(cell_size)
         self.draw_board(cell_size)
         self.pieces = self.load_pieces(cell_size)
-
+   
 
     def flip_turn(self):
         if self.turn is "white":
@@ -310,12 +433,16 @@ class Board():
     def load_color(self, cell_size: int, color: str) -> List[Piece]:
         """Loads all the starting pieces of specified color for start of the game. Returns a list all pieces (not ordered)"""
         piece_list = []
-        for piece, loc in my_pieces[color]["position"].items():
+        for piece, loc in my_pieces[color].items():
+            piece_idx = 0 #ugly
             for row, col in loc:
                 new_piece = self.piece_key_map[piece](cell_size, cell_size, color) #create piece
                 new_piece.update_cell_position(row, col) #initialize proper board location
                 self.screen.blit(new_piece.surf, new_piece.rect) #add to board
                 piece_list.append(new_piece)
+                new_piece.attacked_tiles = new_piece.get_attacked_tiles(self)
+                self.sorted_pieces[color][piece][piece_idx] = new_piece #very ugly
+                piece_idx += 1
         
         return piece_list
     
@@ -353,7 +480,7 @@ class Board():
                     #if piece color doesn't match we can capture so it's valid and added . 
                     #We check pawn excpetion in it's move logic so we don't have a bug here for that special case
                     unblocked_path.append((cur_row, cur_col)) 
-                break #once we hit a pice we are done 
+                break #once we hit a piece we are done 
 
             unblocked_path.append((cur_row, cur_col))
 
@@ -375,15 +502,10 @@ class Board():
                 piece.legal_en_passe = False
 
     def check_en_passe(self, row, col):
-        cap_row = row
         if type(self.selected_piece) is Pawn:
-            if self.turn is "black":
-                cap_row -= 1
-            else:
-                cap_row += 1
-
-            print(cap_row, self.turn)
+            cap_row = self.en_passe_capture(row)
             piece = get_piece_at_loc(cap_row, col, self.pieces)
+
             if piece:
                 print(piece)
                 return type(piece) is Pawn and piece.legal_en_passe
@@ -392,13 +514,15 @@ class Board():
         return False
 
     def en_passe_capture(self, row) -> int:
-        cap_row = row
         if self.turn is "black":
-            cap_row -= 1
+            return row - 1
         else:
-            cap_row += 1
-        return cap_row
+            return row + 1
 
+    def update_attacking_pieces(self):
+        """should update attacking squares of rook, bishop and queen for all colors"""
+        pass
+    
     def move_selected_piece(self, row: int, col: int, is_capture: bool, is_en_passe: bool):
         cur_row, cur_col = self.selected_piece.row, self.selected_piece.col
         location_unblocked = self.location_unblocked(row, col, self.selected_piece)
@@ -413,11 +537,13 @@ class Board():
                 self.draw_tile(self.cell_size, self.screen, cap_row, col)
                 piece = get_piece_at_loc(cap_row, col, self.pieces)
                 self.pieces.remove(piece)
+                self.sorted_pieces[piece.color][piece.piece_type].remove(piece)
             
             if type(self.selected_piece) is Pawn:
                 self.selected_piece.update_en_passe(row)
             
             self.selected_piece.update_cell_position(row, col) #initialize proper board location
+            self.selected_piece.attacked_tiles = self.selected_piece.get_attacked_tiles(self)
 
             self.screen.blit(self.selected_piece.surf, self.selected_piece.rect) #add to board
             self.draw_tile(self.cell_size, self.screen, cur_row, cur_col)
@@ -461,10 +587,10 @@ while running:
             else:
                 if new_board.selected_piece:
                     is_en_passe = new_board.check_en_passe(row, col)
+                    
                     if is_en_passe:
-                        new_board.move_selected_piece(row, col, True, is_en_passe)
-                    else:
-                        new_board.move_selected_piece(row, col, is_capture, is_en_passe)
+                        is_capture = True
+                    new_board.move_selected_piece(row, col, is_capture, is_en_passe)
 
     pygame.display.flip()
 
