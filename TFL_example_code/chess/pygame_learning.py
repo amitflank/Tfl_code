@@ -105,18 +105,20 @@ class Pawn(Piece):
             self.legal_en_passe = True
     
     def get_attacked_tiles(self, board = None):
-        self.attacked_tiles = []
+        attacked_tiles = []
         if self.col > 0:
             if self.color is "black":
-                self.attacked_tiles.append((self.row + 1, self.col - 1))
+                attacked_tiles.append((self.row + 1, self.col - 1))
             else:
-                self.attacked_tiles.append((self.row - 1, self.col - 1))
+                attacked_tiles.append((self.row - 1, self.col - 1))
 
         if self.col < 7:
             if self.color is "black":
-                self.attacked_tiles.append((self.row + 1, self.col + 1))
+                attacked_tiles.append((self.row + 1, self.col + 1))
             else:
-                self.attacked_tiles.append((self.row - 1, self.col + 1))
+                attacked_tiles.append((self.row - 1, self.col + 1))
+        
+        return attacked_tiles
 
     def is_legal_move(self, new_row: int, new_col: int, is_capture: bool):
         """checks if given move satisfies legal move conditions for pawn. Does not check for pins or blocked movement"""
@@ -355,7 +357,7 @@ class Knight(Piece):
         return []
 
     def get_attacked_tiles(self, board = None):
-        self.attacked_tiles = []
+        attacked_tiles = []
         legal_moves = [-2, -1, 1, 2] #legal row col move values for a knight
         output_list = list(itertools.product(legal_moves, repeat=2))
 
@@ -365,7 +367,9 @@ class Knight(Piece):
 
             valid_combo = abs(row) != abs(col)
             if self.is_legal_row_and_col(new_row, new_col) and valid_combo:
-                self.attacked_tiles.append((self.row + row, self.col + col))
+                attacked_tiles.append((self.row + row, self.col + col))
+        
+        return attacked_tiles
 
 class King(Piece):
     def __init__(self, height: int, width: int, color: str):
@@ -379,7 +383,7 @@ class King(Piece):
         return []
 
     def get_attacked_tiles(self, board = None):
-        self.attacked_tiles = []
+        attacked_tiles = []
 
         #get all row col combonition of legal king movements
         test_list = [range(-1, 2),range(-1,2)] 
@@ -391,7 +395,9 @@ class King(Piece):
             new_row = self.row + row 
             new_col = self.col + col
             if self.is_legal_row_and_col(new_row, new_col):
-                self.attacked_tiles.append((self.row + row, self.col + col))
+                attacked_tiles.append((self.row + row, self.col + col))
+        
+        return attacked_tiles
 
 
 class Board():
@@ -404,6 +410,7 @@ class Board():
         self.COLS = 8
         self.selected_piece = None
         self.sorted_pieces = deepcopy(my_pieces)
+        self.in_check =  {"white": [], "black": []}
 
         self.screen = self.set_up_screen(cell_size)
         self.draw_board(cell_size)
@@ -450,7 +457,6 @@ class Board():
                 new_piece.update_cell_position(row, col) #initialize proper board location
                 self.screen.blit(new_piece.surf, new_piece.rect) #add to board
                 piece_list.append(new_piece)
-                #new_piece.attacked_tiles = new_piece.get_attacked_tiles(self)
                 self.sorted_pieces[color][piece][piece_idx] = new_piece #very ugly
                 piece_idx += 1
         
@@ -536,18 +542,57 @@ class Board():
             if type(piece) is King and piece.color == color:
                 return piece.row, piece.col
 
-    def update_attacking_pieces(self, ignore = None, add_loc = None, add_piece = None):
+    def update_attacking_pieces(self, ignore = None, add_loc = None, add_piece = None) -> bool:
         """should update attacking squares of rook, bishop and queen for all colors"""
+        
+        op_color =  "black" if (self.turn == "white") else "white"
+        king_pos = self.get_king_loc(op_color)
+        attacks_king = []
+
         update_types = [Queen, Bishop, Rook]
         for piece in self.pieces:
             if type(piece) in update_types:
-                tiles = piece.get_attacked_tiles(self, ignore, add_loc, add_piece)
-                piece.attacked_tiles = tiles
+                piece.attacked_tiles = piece.get_attacked_tiles(self, ignore, add_loc, add_piece)
+
+            if piece.color == self.turn:
+                if king_pos in piece.attacked_tiles:
+                    attacks_king.append(piece)
+
+        return attacks_king
+
+    def legal_move_while_in_check(self, row: int, col: int):
+        """returns a bool indicating is this is a legal move while in check. If not in check returns True"""
+        if len(self.in_check[self.turn]) == 0:
+            return True
+        elif len(self.in_check[self.turn]) == 1:
+            check_piece = self.in_check[self.turn][0]
+            check_path = check_piece.get_attacked_tiles(self) #gets path of opposite colored piece attacking king
+
+            #if king moves must be out of check path if another piece moves must be into check path or removing checking piece
+            if type(self.selected_piece) is King:
+                return (row, col) not in check_path
+            else:
+                return (row, col) in check_path or (row, col) == (check_piece.row, check_piece.col)
+        else: # only other option is 2 pieces in this case king must move since we cannot block both
+            if type(self.selected_piece) is King:
+                check_path = self.in_check[self.turn][0] + self.in_check[self.turn][1]
+                return (row, col) not in check_path
+            return False
+    
+    #def pawn_promotion:
+    #   if black pawn reaches row 7 remove it and replace with queen
+    #   if white pawn reaches row 0 remove it and replace with queen
+
+    #def castle:
+    #   if king has not moved and closest rook has not moved implement some logic to move both
+    #   king can not move through check but rook can
+    #   use variant of method that checks for checks (I know awkward lang) to see if tile being moved through are being attacked
+
+
 
     def is_illegal_check(self, color: str, ignore: tuple, add_loc: tuple, add_piece: Piece) -> bool:
         king_pos = self.get_king_loc(color)
 
-        print(king_pos)
         update_types = [Queen, Bishop, Rook]
         for piece in self.pieces:
             if type(piece) in update_types and (piece.color is not color):
@@ -557,12 +602,12 @@ class Board():
         return False
                     
     def move_selected_piece(self, row: int, col: int, is_capture: bool, is_en_passe: bool):
-        cur_row, cur_col = self.selected_piece.row, self.selected_piece.col
+        cur_row, cur_col = self.selected_piece.row, self.selected_piece.col 
         location_unblocked = self.location_unblocked(row, col, self.selected_piece)
         illegal_check = self.is_illegal_check(self.turn, (cur_row, cur_col), (row, col), self.selected_piece)
-        print(illegal_check)
+        legal_if_in_check  =self.legal_move_while_in_check(row, col)
 
-        if self.selected_piece.is_legal_move(row, col, is_capture) and location_unblocked and not illegal_check:
+        if self.selected_piece.is_legal_move(row, col, is_capture) and location_unblocked and not illegal_check and legal_if_in_check:
             #delete a piece if it gets captured
             if is_capture:
                 cap_row = row
@@ -578,14 +623,18 @@ class Board():
             
             self.selected_piece.update_cell_position(row, col) #initialize proper board location
             self.selected_piece.attacked_tiles = self.selected_piece.get_attacked_tiles(self)
-            self.update_attacking_pieces()
+            attacks_king = self.update_attacking_pieces()
+            self.in_check[self.turn] = [] # we passed legal check move so we reset check status for this color
 
             self.screen.blit(self.selected_piece.surf, self.selected_piece.rect) #add to board
             self.draw_tile(self.cell_size, self.screen, cur_row, cur_col)
             self.selected_piece.de_select(self.screen)
             self.selected_piece = None #deselect piece
             self.flip_turn() #other player turn now
-            self.update_pawn_en_passe_status() #we reset en passe status at start of turn
+            
+            self.in_check[self.turn] = attacks_king #update check status for opposite color, we run after flip turn so it's not a bug
+        
+            self.update_pawn_en_passe_status() #we reset en passe status at start of new turn
 
 pygame.init()
 
