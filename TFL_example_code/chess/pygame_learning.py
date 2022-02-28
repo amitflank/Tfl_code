@@ -579,15 +579,24 @@ class Board():
                 return (row, col) not in check_path
             return False
     
-    #def pawn_promotion:
-    #   if black pawn reaches row 7 remove it and replace with queen
-    #   if white pawn reaches row 0 remove it and replace with queen
+    def pawn_promotion(self, piece: Pawn):
+        """For simplicity we will only allow queen promotions as this is the most common case, we may update this in future.
+        called on pawn movement. Replaces pawn with queen of appropriate color on same square if pawn reaches final row"""
+        row, col = piece.row, piece.col
+        if type(piece) is not Pawn:
+            raise ValueError("pawn promotion only accepts pieces of type pawn but received piece of type {0}".format(type(piece)))
+        
+        if piece.color is "black" and row == 7 or piece.color is "white" and row == 0:
+            new_queen = Queen(self.cell_size, self.cell_size, piece.color)
+            self.pieces.remove(piece)
+            new_queen.update_cell_position(row, col)
+            self.pieces.append(new_queen)
+            self.selected_piece = new_queen
 
     #def castle:
     #   if king has not moved and closest rook has not moved implement some logic to move both
     #   king can not move through check but rook can
     #   use variant of method that checks for checks (I know awkward lang) to see if tile being moved through are being attacked
-
 
 
     def is_illegal_check(self, color: str, ignore: tuple, add_loc: tuple, add_piece: Piece) -> bool:
@@ -605,7 +614,7 @@ class Board():
         cur_row, cur_col = self.selected_piece.row, self.selected_piece.col 
         location_unblocked = self.location_unblocked(row, col, self.selected_piece)
         illegal_check = self.is_illegal_check(self.turn, (cur_row, cur_col), (row, col), self.selected_piece)
-        legal_if_in_check  =self.legal_move_while_in_check(row, col)
+        legal_if_in_check = self.legal_move_while_in_check(row, col)
 
         if self.selected_piece.is_legal_move(row, col, is_capture) and location_unblocked and not illegal_check and legal_if_in_check:
             #delete a piece if it gets captured
@@ -621,7 +630,13 @@ class Board():
             if type(self.selected_piece) is Pawn:
                 self.selected_piece.update_en_passe(row)
             
+            
             self.selected_piece.update_cell_position(row, col) #initialize proper board location
+
+            
+            if type(self.selected_piece) is Pawn:
+                self.pawn_promotion(self.selected_piece)
+            
             self.selected_piece.attacked_tiles = self.selected_piece.get_attacked_tiles(self)
             attacks_king = self.update_attacking_pieces()
             self.in_check[self.turn] = [] # we passed legal check move so we reset check status for this color
