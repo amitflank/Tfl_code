@@ -390,7 +390,6 @@ class King(Piece):
         output_list = list(itertools.product(*test_list))
         output_list.remove((0,0)) # we don't want no movement included
 
-
         for row, col in output_list:
             new_row = self.row + row 
             new_col = self.col + col
@@ -516,11 +515,12 @@ class Board():
             return (row, col) in legal_path
 
     def update_pawn_en_passe_status(self):
+        """resets en passe status of all pawns of player who turn it currently is"""
         for piece in self.pieces:
             if type(piece) is Pawn and piece.color == self.turn:
                 piece.legal_en_passe = False
 
-    def check_en_passe(self, row, col):
+    def check_en_passe(self, row: int, col: int) -> bool:
         if type(self.selected_piece) is Pawn:
             cap_row = self.en_passe_capture(row)
             piece = get_piece_at_loc(cap_row, col, self.pieces)
@@ -532,17 +532,19 @@ class Board():
         return False
 
     def en_passe_capture(self, row) -> int:
+        """returns row of piece being capture en passe"""
         if self.turn is "black":
             return row - 1
-        else:
-            return row + 1
+
+        return row + 1
     
     def get_king_loc(self, color: str) -> Tuple[int, int]:
+        """get tuple of row and colum of the king with of color"""
         for piece in self.pieces:
             if type(piece) is King and piece.color == color:
                 return piece.row, piece.col
 
-    def update_attacking_pieces(self, ignore = None, add_loc = None, add_piece = None) -> bool:
+    def update_attacking_pieces(self, ignore = None, add_loc = None, add_piece = None) -> List[Piece]:
         """should update attacking squares of rook, bishop and queen for all colors"""
         
         op_color =  "black" if (self.turn == "white") else "white"
@@ -598,8 +600,32 @@ class Board():
     #   king can not move through check but rook can
     #   use variant of method that checks for checks (I know awkward lang) to see if tile being moved through are being attacked
 
+    def is_checkmate(self) -> bool:
+        k_row, k_col = self.get_king_loc(self.turn)
+        king: King =  get_piece_at_loc(k_row, k_col, self.pieces)
+
+        legal_king_move = False
+        legal_blocker = False
+
+        #check if king has legal move that removes it from check
+        attacking_piece = self.in_check[self.turn][0]
+        potential_tiles = king.get_attacked_tiles()
+            
+        for row, col in potential_tiles:
+            new_pos = row, col
+            if self.location_unblocked(row, col, king):
+                if new_pos not in attacking_piece.get_attacked_tiles(self):
+                    legal_king_move = True
+
+        if len(self.in_check[self.turn]) == 1:
+
+            #going to need some special condition checks for pawn behavior not mathching attacking behavior
+            return legal_king_move or legal_blocker
+        else:
+            return legal_king_move
 
     def is_illegal_check(self, color: str, ignore: tuple, add_loc: tuple, add_piece: Piece) -> bool:
+        """returns a bool indicating if this move causes king to illegally be placed in check"""
         king_pos = self.get_king_loc(color)
 
         update_types = [Queen, Bishop, Rook]
@@ -629,11 +655,9 @@ class Board():
 
             if type(self.selected_piece) is Pawn:
                 self.selected_piece.update_en_passe(row)
-            
-            
+                    
             self.selected_piece.update_cell_position(row, col) #initialize proper board location
 
-            
             if type(self.selected_piece) is Pawn:
                 self.pawn_promotion(self.selected_piece)
             
@@ -648,7 +672,6 @@ class Board():
             self.flip_turn() #other player turn now
             
             self.in_check[self.turn] = attacks_king #update check status for opposite color, we run after flip turn so it's not a bug
-        
             self.update_pawn_en_passe_status() #we reset en passe status at start of new turn
 
 pygame.init()

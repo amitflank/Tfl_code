@@ -92,6 +92,10 @@ class Board():
     def create_board(self, growth_mul: int):
         #creates board of tiles self.height by self.width
         #All tiles should assign their plants growth_mul as growth_mul
+    
+    def get_remaining_animals(self) -> Tuple[int, int]:
+        #returns tuple of total sum of remaining herbivores and carnivores in our grid
+
 
     def add_animals(self, num_herb: int, num_carni: int):
         #randomly create and add to grid num_herb Herbivores and num_carni Carnivores
@@ -112,6 +116,8 @@ class Board():
         #Check to make sure movement is in bounds of our grid using validate_move to adjust if needed
         #If an animals starves remove it from game
 
+    def clean_corpses(self, animals: List[Animal]):
+        remove all animal corpses in animals
 
     def feed_animals(self, animals: List[Animal], tile: Tile):
         #All animals on tile try and eat. Herbivores try and eat plants while carnivores can eat herbivores on same tile as them
@@ -127,5 +133,17 @@ class Board():
 
     def validate_move(self, move_dist: int, cur_pos: int, max_val: int) -> int:
        Check if move is valid if not flip direction of move otherwise do nothing and return current movement
-      
+
+
+run_game()
+    take from user following parameters:
+        board heigh, width
+        number herbivores
+        starting herbivore calories
+        herbivore calorie move cost
+        staring carnivore calories
+        carnivore move cost
+        days to run
+        plant growth multiple
+        
 """
