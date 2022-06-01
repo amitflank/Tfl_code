@@ -7,6 +7,10 @@ my_sched = Schedule(2022, 6, 15)
 key_match = {'K': "Kinley", 'S': "Sav", 'Ka': "Kate", 'B': "Braxton", 'De': "Delcie",
 				'M': "Mitch", 'D': "Devon"}
 
+@pytest.fixture
+def run_prio():
+	my_sched.prioritize_days()
+	return 0
 
 @staticmethod
 @pytest.mark.parametrize("day, expected_mentor_symbol, key_match", [
@@ -31,3 +35,11 @@ def test_pay_day_creation(day: Day, expected_mentor_symbol: List[str], key_match
 	assert len(expected_mentors) == len(day.potential_mentors), "Found {0} mentors but expected {1} mentors in potential mentor list".format(day.potential_mentors, expected_mentors)
 	for mentor in day.potential_mentors:
 		assert mentor.name in expected_mentors, "Found {0} in potential mentors but not in expected mentor list {1}". format(mentor.name, expected_mentors)
+
+@staticmethod
+@pytest.mark.parametrize("days, expected_day_order, run_prio", [
+		(my_sched.pay_days, [4,3,5,6,13,2,7,8,9,10,11,12,1,14,15], run_prio()),
+])
+def test_day_priority(days: List[Day], expected_day_order: List[int], run_prio):
+	for idx, day in enumerate(days):
+		assert day.date_info.day == expected_day_order[idx], "Got bad date at idx {0}".format(idx)
