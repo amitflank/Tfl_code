@@ -179,7 +179,7 @@ class Board():
         self.herb_prop: Dict[int, int, int, int] = herb_prop
         self.carni_prop: Dict[int, int, int] = carni_prop
         self.create_board(growth_mul)
-        self.add_animals(herb_prop['num_herb'], carni_prop['num_carni'])
+        self.add_animals()
        
 
     def create_board(self, growth_mul: int):
@@ -194,8 +194,7 @@ class Board():
 
     def get_remaining_animals(self) -> Tuple[int, int]:
         """returns tuple of total sum of remaining herbivores and carnivores in our grid"""
-        total_herb = 0
-        total_carni = 0
+        total_herb, total_carni = 0, 0
 
         for row in range(self.height):
             for col in range(self.width):
@@ -208,18 +207,15 @@ class Board():
 
     def add_animals(self):
         """Add herbivores and carnivores to random tiles in our grid as specified by herb_prop and carni_prop"""
+        y_cord = randint(0, self.height - 1)
+        x_cord = randint(0, self.width - 1)
+        
         for _ in range(self.herb_prop["num_herb"]):
-            y_cord = randint(0, self.height - 1)
-            x_cord = randint(0, self.width - 1)
-
             #create herbivores with passed user properties
             my_herb = Herbivore(self.herb_prop["cal_val"], self.herb_prop["move_cost"], self.herb_prop["meat_val"]) 
             self.grid[y_cord][x_cord].add_animal(my_herb)
 
         for _ in range(self.carni_prop["num_carni"]):
-            y_cord = randint(0, self.height - 1)
-            x_cord = randint(0, self.width - 1)
-
             my_carni = Carnivore(self.carni_prop["cal_val"], self.carni_prop["move_cost"])
             self.grid[y_cord][x_cord].add_animal(my_carni)
             
@@ -308,6 +304,7 @@ class Board():
         returns list of tuple for x distance traveled, y distance traveled and total distance traveled for testing"""
         animals_copy =  animals.copy() #shallow copy to prevent pass by reference errors in loop
         distances = []
+        idx = 0
 
         for animal in animals_copy:
             if not animal.has_moved:
@@ -319,7 +316,8 @@ class Board():
                     self.grid[y_cord + y_dist][x_cord + x_dist].add_animal(animal)
                     self.clean_corpses(self.grid[y_cord + y_dist][x_cord + x_dist].contains) #remove animals that starved
         
-                distances.append((x_dist, y_dist, distance))
+                distances.append((x_dist, y_dist, distance, idx))
+            idx += 1
         return distances
     
     def validate_move(self, move_dist: int, cur_pos: int, max_val: int) -> int:
@@ -359,5 +357,3 @@ def run_game():
     corpses = my_board.corpse_count
 
     print("After {0} days we killed {1} animals and have {2} herbivores and {3} carnivores left".format(days, corpses, herbs_left, carni_left))
-
-run_game()
