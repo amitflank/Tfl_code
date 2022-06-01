@@ -1,10 +1,10 @@
 """
 metrics:
-    hours wanted per pay period: 5
-    availability days: 3
-    consecutive days (5 bad 6+ terrible) 3
-    variety: every mentor should work with everyone else at least once: 1
-    bleed-over: Have at least 1 mentor from the previous day working
+	hours wanted per pay period: 5
+	availability days: 3
+	consecutive days (5 bad 6+ terrible) 3
+	variety: every mentor should work with everyone else at least once: 1
+	bleed-over: Have at least 1 mentor from the previous day working
 """
 import datetime as dt
 from calendar import monthrange
@@ -13,226 +13,226 @@ from bad_db import seasonal_shift_info, mentor_info_june
 from bisect import bisect_left
  
 def BinarySearch(a, x):
-    i = bisect_left(a, x)
-    if i != len(a) and a[i] == x:
-        return i
-    else:
-        return -1
+	i = bisect_left(a, x)
+	if i != len(a) and a[i] == x:
+		return i
+	else:
+		return -1
 
 class Mentor():
-    """represents Mentor specific scheduling information for a single pay period"""
+	"""represents Mentor specific scheduling information for a single pay period"""
 
-    def __init__(self, name: str, hours_wanted: int, hard_dates: List[int], soft_dates: List[int], len_pay: int):
-        self.name = name
-        self.hours_wanted =  hours_wanted
-        self.hard_dates = hard_dates
-        self.soft_dates = soft_dates
+	def __init__(self, name: str, hours_wanted: int, hard_dates: List[int], soft_dates: List[int], len_pay: int):
+		self.name = name
+		self.hours_wanted =  hours_wanted
+		self.hard_dates = hard_dates
+		self.soft_dates = soft_dates
 
-        self.hours_pay = 0
-        self.days_left = len_pay - len(hard_dates)
-    
-    def legal_shift_add(self, shift_len: int):
-        """checks if adding new shifts leads to overtime"""
-        return self.hours_pay + shift_len < 80 
-        
-    def __radd__(self, other):
-        return other + self.get_available_hours()
-    
-    def get_available_hours(self) -> int:
-        """get remaining hours this mentor wants in current pay period"""
-        return self.hours_wanted - self.hours_pay
-    
+		self.hours_pay = 0
+		self.days_left = len_pay - len(hard_dates)
+	
+	def legal_shift_add(self, shift_len: int):
+		"""checks if adding new shifts leads to overtime"""
+		return self.hours_pay + shift_len < 80 
+		
+	def __radd__(self, other):
+		return other + self.get_available_hours()
+	
+	def get_available_hours(self) -> int:
+		"""get remaining hours this mentor wants in current pay period"""
+		return self.hours_wanted - self.hours_pay
+	
 
 class Day():
-    """Class represents a scheduled Day"""
+	"""Class represents a scheduled Day"""
 
-    def __init__(self, date_info: dt.datetime):
-        self.date_info = date_info
-        self.is_weekday = date_info.weekday() < 5
-        self.season = self.get_season()
-        self.shifts = self.get_shifts(self.season)
-        self.mentors_on_shift = {shift: None for shift in self.shifts} 
-        self.total_hours = sum(self.shifts.values())
-        self.assigned_hours = 0
-        self.potential_mentors: List[Mentor] = []
-        self.priority_value = 0
-        
+	def __init__(self, date_info: dt.datetime):
+		self.date_info = date_info
+		self.is_weekday = date_info.weekday() < 5
+		self.season = self.get_season()
+		self.shifts = self.get_shifts(self.season)
+		self.mentors_on_shift = {shift: None for shift in self.shifts} 
+		self.total_hours = sum(self.shifts.values())
+		self.assigned_hours = 0
+		self.potential_mentors: List[Mentor] = []
+		self.priority_value = 0
+		
 
-    def get_mentor_days(self) -> int:
-        """Get number of mentors who can still theoretically work on this day"""
-        return len(self.potential_mentors)
+	def get_mentor_days(self) -> int:
+		"""Get number of mentors who can still theoretically work on this day"""
+		return len(self.potential_mentors)
 
-    def get_available_mentor_hours(self) -> int:
-        """get number of hours mentors could still theoretically work on this day"""
-        return sum(self.potential_mentors)
+	def get_available_mentor_hours(self) -> int:
+		"""get number of hours mentors could still theoretically work on this day"""
+		return sum(self.potential_mentors)
 
-    def add_potential_mentor(self, mentor: Mentor):
-        """Adds mentor to potential_mentors field"""
-        self.potential_mentors.append(mentor)
-    
-    def available_shifts(self) -> bool:
-        """Check if this day has any more shifts available. Returns a bool"""
-        return None in self.mentors_on_shift.values()
+	def add_potential_mentor(self, mentor: Mentor):
+		"""Adds mentor to potential_mentors field"""
+		self.potential_mentors.append(mentor)
+	
+	def available_shifts(self) -> bool:
+		"""Check if this day has any more shifts available. Returns a bool"""
+		return None in self.mentors_on_shift.values()
 
-    def add_shift(self, mentor: Mentor) -> bool:
-        """Tries to add mentor to next available open shift slot. Returns bool indicating success status.
-        Raises error if  empty shift is not available"""
-        for shift, slot in self.mentors_on_shift.items():
-            if slot is None:
-                legal_add = mentor.legal_shift_add(self.shifts[shift])
+	def add_shift(self, mentor: Mentor) -> bool:
+		"""Tries to add mentor to next available open shift slot. Returns bool indicating success status.
+		Raises error if  empty shift is not available"""
+		for shift, slot in self.mentors_on_shift.items():
+			if slot is None:
+				legal_add = mentor.legal_shift_add(self.shifts[shift])
 
-                if legal_add:
-                    self.mentors_on_shift[shift] = mentor
-                    mentor.hours_pay += self.shifts[shift]
-                    return True
-                return False
+				if legal_add:
+					self.mentors_on_shift[shift] = mentor
+					mentor.hours_pay += self.shifts[shift]
+					return True
+				return False
 
-        raise ValueError("Tried to fill shift in full day, this should never happen")
+		raise ValueError("Tried to fill shift in full day, this should never happen")
 
-    def add_lowest_shift(self, mentor: Mentor) -> bool:
-        """adds mentor to shift with lowest number of hours required. Useful for avoiding overtime.
-        Returns bool indicating success status"""
-        lowest_hours = 100
-        cur_shift = None
+	def add_lowest_shift(self, mentor: Mentor) -> bool:
+		"""adds mentor to shift with lowest number of hours required. Useful for avoiding overtime.
+		Returns bool indicating success status"""
+		lowest_hours = 100
+		cur_shift = None
 
-        for shift, slot in self.mentors_on_shift.items():
-            if slot is None:
+		for shift, slot in self.mentors_on_shift.items():
+			if slot is None:
 
-                shift_len = self.shifts[shift]
-                if shift_len < lowest_hours:
-                    lowest_hours = shift_len
-                    cur_shift = shift
+				shift_len = self.shifts[shift]
+				if shift_len < lowest_hours:
+					lowest_hours = shift_len
+					cur_shift = shift
 
-        legal_add = mentor.legal_shift_add(lowest_hours)
+		legal_add = mentor.legal_shift_add(lowest_hours)
 
-        if legal_add:
-            self.mentors_on_shift[cur_shift] = mentor
-            mentor.hours_pay += self.shifts[shift]
-            return True
-    
-        return False
+		if legal_add:
+			self.mentors_on_shift[cur_shift] = mentor
+			mentor.hours_pay += self.shifts[shift]
+			return True
+	
+		return False
 
-    def remove_shift(self):
-        pass
+	def remove_shift(self):
+		pass
 
-    def get_needed_hours(self) -> int:
-        return self.total_hours - self.assigned_hours
+	def get_needed_hours(self) -> int:
+		return self.total_hours - self.assigned_hours
 
-    def get_season(self) -> str:
-        """get season to which this day belongs"""
-        for season, season_info in seasonal_shift_info.items():
+	def get_season(self) -> str:
+		"""get season to which this day belongs"""
+		for season, season_info in seasonal_shift_info.items():
 
-            start_date = season_info['dates']['start'].date()
-            end_date = season_info['dates']['end'].date() 
+			start_date = season_info['dates']['start'].date()
+			end_date = season_info['dates']['end'].date() 
 
-            if self.date_info.date() >= start_date and self.date_info.date() <= end_date:
-                return season
-        
-        raise ValueError('Could not find season that matched given date')
-    
-    def get_shifts(self, season: str) -> Dict[str, int]:
-        """get the shifts required for this day"""
-        if self.is_weekday:
-            return seasonal_shift_info[season]['weekday_shift'].copy()
-        return seasonal_shift_info[season]['weekend_shift'].copy()
+			if self.date_info.date() >= start_date and self.date_info.date() <= end_date:
+				return season
+		
+		raise ValueError('Could not find season that matched given date')
+	
+	def get_shifts(self, season: str) -> Dict[str, int]:
+		"""get the shifts required for this day"""
+		if self.is_weekday:
+			return seasonal_shift_info[season]['weekday_shift'].copy()
+		return seasonal_shift_info[season]['weekend_shift'].copy()
 
 class Schedule():
 
-    def __init__(self, year: int, month: int, len_p1: int):
-        len_month = monthrange(year, month) #get num days in month, used to calc len_p2
-        self.mentors = self.create_mentor_info(len_p1)
-        self.pay_days = self.create_pay_days(start_date = dt.datetime(year, month, 1), end_date= dt.datetime(year, month, len_p1))
-        self.prioritize_days()
-    
-    def create_mentor_info(self, len_pay: int) -> List[Mentor]:
-        """Create initial default list of mentors for a given pay period"""
-        mentor_list = [None for _ in mentor_info_june]
-        idx = 0
-        for name, info in mentor_info_june.items():
-            c_info = info.copy()
-            c_info['name'] = name
-            c_info['len_pay'] = len_pay
+	def __init__(self, year: int, month: int, len_p1: int):
+		len_month = monthrange(year, month) #get num days in month, used to calc len_p2
+		self.mentors = self.create_mentor_info(len_p1)
+		self.pay_days = self.create_pay_days(start_date = dt.datetime(year, month, 1), end_date= dt.datetime(year, month, len_p1))
+		self.prioritize_days()
+	
+	def create_mentor_info(self, len_pay: int) -> List[Mentor]:
+		"""Create initial default list of mentors for a given pay period"""
+		mentor_list = [None for _ in mentor_info_june]
+		idx = 0
+		for name, info in mentor_info_june.items():
+			c_info = info.copy()
+			c_info['name'] = name
+			c_info['len_pay'] = len_pay
 
-            mentor_list[idx] = Mentor(**c_info)
-            idx += 1
-        
-        return mentor_list
+			mentor_list[idx] = Mentor(**c_info)
+			idx += 1
+		
+		return mentor_list
 
 
-    def create_pay_days(self, start_date: dt.datetime, end_date: dt.datetime, offset: int = 0) -> List[Day]:
-        """Create initial set of empty days for a given pay period
-        
-        Args:
-            start_date: start of pay period
-            end_date: end of pay period
-            offset: used in second pay period for indexing purposes, should be equal to length of first pay period
-        """
-        cur_date = start_date
-        num_days = end_date.day - start_date.day + 1
-        days: List[Day] = [None for _ in range(num_days)]
-        idx  = 0
+	def create_pay_days(self, start_date: dt.datetime, end_date: dt.datetime, offset: int = 0) -> List[Day]:
+		"""Create initial set of empty days for a given pay period
+		
+		Args:
+			start_date: start of pay period
+			end_date: end of pay period
+			offset: used in second pay period for indexing purposes, should be equal to length of first pay period
+		"""
+		cur_date = start_date
+		num_days = end_date.day - start_date.day + 1
+		days: List[Day] = [None for _ in range(num_days)]
+		idx  = 0
 
-        while cur_date <= end_date:
-            days[idx] = Day(cur_date)
-            cur_date += dt.timedelta(days=1)
-            idx += 1
-        
-        for mentor in self.mentors:
+		while cur_date <= end_date:
+			days[idx] = Day(cur_date)
+			cur_date += dt.timedelta(days=1)
+			idx += 1
+		
+		for mentor in self.mentors:
 
-            #gets all available days in pay period which mentor can work
-            available_days = [i for i in range(end_date.day + 1)]
-            available_days = [x for x in available_days if x not in mentor.hard_dates] 
+			#gets all available days in pay period which mentor can work
+			available_days = [i for i in range(end_date.day + 1)]
+			available_days = [x for x in available_days if x not in mentor.hard_dates] 
 
-            #assign which mentors can work on given day
-            for date in available_days:
-                days[date - offset].add_potential_mentor(mentor)
-                
-        return days
+			#assign which mentors can work on given day
+			for date in available_days:
+				days[date - offset].add_potential_mentor(mentor)
+				
+		return days
 
-    def prioritize_days(self):
-        """We prioritize using mentors available for each days shift over total number of workable shifts over pay period"""
-        total_available_days = sum([day.get_mentor_days() for day in self.pay_days]) #total workable shifts
-        for day in self.pay_days:
-            day.priority_value = (day.get_mentor_days() / total_available_days) 
+	def prioritize_days(self):
+		"""We prioritize using mentors available for each days shift over total number of workable shifts over pay period"""
+		total_available_days = sum([day.get_mentor_days() for day in self.pay_days]) #total workable shifts
+		for day in self.pay_days:
+			day.priority_value = (day.get_mentor_days() / total_available_days) 
 
-        #not particularly efficient since we end up needing to sort entire list for a single lookup as values change constantly
-        #However can't think of easy clean solution that can replicate this functionality and it's not worth the hassle
-        #to be to clever about it.
-        self.pay_days.sort(key=lambda x: x.priority_value) #overriding sort, hopefully?
+		#not particularly efficient since we end up needing to sort entire list for a single lookup as values change constantly
+		#However can't think of easy clean solution that can replicate this functionality and it's not worth the hassle
+		#to be to clever about it.
+		self.pay_days.sort(key=lambda x: x.priority_value) #overriding sort, hopefully?
 
-    def assign_shift(self):
-        day = self.pay_days[0] #ordered list so highest prio day is always first
-        update_mentors = True #prevents double updating mentors available days on recursive calls
-        highest_prio = 0 
-        cur_mentor = None
+	def assign_shift(self):
+		day = self.pay_days[0] #ordered list so highest prio day is always first
+		update_mentors = True #prevents double updating mentors available days on recursive calls
+		highest_prio = 0 
+		cur_mentor = None
 
-        for mentor in day.potential_mentors:
-            cur_prio = mentor.get_available_hours() / mentor.days_left
+		for mentor in day.potential_mentors:
+			cur_prio = mentor.get_available_hours() / mentor.days_left
 
-            #update mentor if we get better prio
-            if cur_prio > highest_prio:
-                highest_prio = cur_prio
-                cur_mentor = mentor
+			#update mentor if we get better prio
+			if cur_prio > highest_prio:
+				highest_prio = cur_prio
+				cur_mentor = mentor
 
-        success = day.add_shift(cur_mentor)
+		success = day.add_shift(cur_mentor)
 
-        #if we can't assign due to overtime we will look for a shift with less hours
-        if not success:
-            success = day.add_lowest_shift(cur_mentor)
+		#if we can't assign due to overtime we will look for a shift with less hours
+		if not success:
+			success = day.add_lowest_shift(cur_mentor)
 
-            #if we still can't assign we will remove this mentor and try someone else
-            if not success:
-                update_mentors = False #recursive call will update mentor days don't assign in this stack call
-                del day.potential_mentors[cur_mentor]
-                self.prioritize_days() #mentor deletion might change day prio's so lets resort days
-                self.assign_shift()
+			#if we still can't assign we will remove this mentor and try someone else
+			if not success:
+				update_mentors = False #recursive call will update mentor days don't assign in this stack call
+				del day.potential_mentors[cur_mentor]
+				self.prioritize_days() #mentor deletion might change day prio's so lets resort days
+				self.assign_shift()
 
-        if update_mentors:
-            if day.available_shifts():
-                cur_mentor.days_left -= 1
-                del day.potential_mentors[cur_mentor]
-            else:
-                for mentor in day.potential_mentors:
-                    mentor.days_left -= 1 
-                    del self.pay_days[0] #remove day 
-            
+		if update_mentors:
+			if day.available_shifts():
+				cur_mentor.days_left -= 1
+				del day.potential_mentors[cur_mentor]
+			else:
+				for mentor in day.potential_mentors:
+					mentor.days_left -= 1 
+					del self.pay_days[0] #remove day 
+			
