@@ -31,6 +31,12 @@ class Mentor():
 		self.hours_pay = 0
 		self.days_left = len_pay - len(hard_dates)
 	
+	def __repr__(self):
+		return self.name
+
+	def __str__(self):
+		return self.name
+
 	def legal_shift_add(self, shift_len: int):
 		"""checks if adding new shifts leads to overtime"""
 		return self.hours_pay + shift_len < 80 
@@ -133,8 +139,8 @@ class Day():
 	def get_shifts(self, season: str) -> Dict[str, int]:
 		"""get the shifts required for this day"""
 		if self.is_weekday:
-			return seasonal_shift_info[season]['weekday_shift'].copy()
-		return seasonal_shift_info[season]['weekend_shift'].copy()
+			return seasonal_shift_info[season]['weekday_shifts'].copy()
+		return seasonal_shift_info[season]['weekend_shifts'].copy()
 
 class Schedule():
 
@@ -142,7 +148,8 @@ class Schedule():
 		len_month = monthrange(year, month) #get num days in month, used to calc len_p2
 		self.mentors = self.create_mentor_info(len_p1)
 		self.pay_days = self.create_pay_days(start_date = dt.datetime(year, month, 1), end_date= dt.datetime(year, month, len_p1))
-		self.prioritize_days()
+#		self.prioritize_days()
+		a = 1
 	
 	def create_mentor_info(self, len_pay: int) -> List[Mentor]:
 		"""Create initial default list of mentors for a given pay period"""
@@ -180,13 +187,13 @@ class Schedule():
 		for mentor in self.mentors:
 
 			#gets all available days in pay period which mentor can work
-			available_days = [i for i in range(end_date.day + 1)]
+			available_days = [i for i in range(start_date.day, end_date.day + 1)]
 			available_days = [x for x in available_days if x not in mentor.hard_dates] 
 
 			#assign which mentors can work on given day
 			for date in available_days:
-				days[date - offset].add_potential_mentor(mentor)
-				
+				days[date - offset - 1].add_potential_mentor(mentor)
+
 		return days
 
 	def prioritize_days(self):
@@ -235,4 +242,8 @@ class Schedule():
 				for mentor in day.potential_mentors:
 					mentor.days_left -= 1 
 					del self.pay_days[0] #remove day 
-			
+	
+
+
+	def assign_all_shifts(self):
+		pass
