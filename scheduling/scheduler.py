@@ -7,11 +7,23 @@ metrics:
 	bleed-over: Have at least 1 mentor from the previous day working
 """
 import datetime as dt
+import operator
 from calendar import monthrange
-from typing import List, Dict
+from typing import List, Dict, Union
 from bad_db import seasonal_shift_info, mentor_info_june
 from bisect import bisect_left
  
+
+
+
+def get_truth(inp, relate, cut):
+	ops = {'>': operator.gt,
+			'<': operator.lt,
+			'>=': operator.ge,
+			'<=': operator.le,
+			'==': operator.eq}
+	return ops[relate](inp, cut)
+
 def BinarySearch(a, x):
 	i = bisect_left(a, x)
 	if i != len(a) and a[i] == x:
@@ -146,18 +158,18 @@ class Schedule():
 
 	def __init__(self, year: int, month: int, len_p1: int):
 		len_month = monthrange(year, month) #get num days in month, used to calc len_p2
-		self.mentors = self.create_mentor_info(len_p1)
+		self.mentors = self.create_mentor_info(len_p1, '<=')
 		self.pay_days = self.create_pay_days(start_date = dt.datetime(year, month, 1), end_date= dt.datetime(year, month, len_p1))
-#		self.prioritize_days()
-		a = 1
 	
-	def create_mentor_info(self, len_pay: int) -> List[Mentor]:
+	def create_mentor_info(self, len_pay: int, comparator: str) -> List[Mentor]:
 		"""Create initial default list of mentors for a given pay period"""
 		mentor_list = [None for _ in mentor_info_june]
 		idx = 0
 		for name, info in mentor_info_june.items():
 			c_info = info.copy()
+			c_info['hard_dates'] = [date for date in info['hard_dates'] if get_truth(date, comparator, len_pay)] 
 			c_info['name'] = name
+			c_info['hours_wanted'] = c_info['hours_wanted'] * 2 #2 weeks
 			c_info['len_pay'] = len_pay
 
 			mentor_list[idx] = Mentor(**c_info)
@@ -205,9 +217,13 @@ class Schedule():
 		#not particularly efficient since we end up needing to sort entire list for a single lookup as values change constantly
 		#However can't think of easy clean solution that can replicate this functionality and it's not worth the hassle
 		#to be to clever about it.
-		self.pay_days.sort(key=lambda x: x.priority_value) #overriding sort, hopefully?
+		self.pay_days.sort(key=lambda day: (day.priority_value,  -day.get_available_mentor_hours())) #costume sort
 
-	def assign_shift(self):
+	def assign_shift(self) -> Union[int, Mentor]:
+		"""assign first shift in highest prio day if possible.
+		
+		Returns:
+			1 if all Mentors lost a day otherwise returns mentor who was assigned. Useful for updating mentor eligibility """
 		day = self.pay_days[0] #ordered list so highest prio day is always first
 		update_mentors = True #prevents double updating mentors available days on recursive calls
 		highest_prio = 0 
@@ -230,20 +246,56 @@ class Schedule():
 			#if we still can't assign we will remove this mentor and try someone else
 			if not success:
 				update_mentors = False #recursive call will update mentor days don't assign in this stack call
-				del day.potential_mentors[cur_mentor]
+				day.potential_mentors.remove(cur_mentor)
 				self.prioritize_days() #mentor deletion might change day prio's so lets resort days
 				self.assign_shift()
 
 		if update_mentors:
-			if day.available_shifts():
+
+			#not enough mentors to fill shifts, we will just put none to indicate some action must be taken 
+			if len(day.potential_mentors) == 1: #check one b/c have not del assigned mentor yet
+				for mentor in day.potential_mentors:
+					mentor.days_left -= 1 
+				del self.pay_days[0] #remove day
+				return 1
+
+			elif day.available_shifts():
 				cur_mentor.days_left -= 1
-				del day.potential_mentors[cur_mentor]
+				day.potential_mentors.remove(cur_mentor)
+				return cur_mentor
+
 			else:
 				for mentor in day.potential_mentors:
 					mentor.days_left -= 1 
-					del self.pay_days[0] #remove day 
-	
+				del self.pay_days[0] #remove day 
+				return 1
 
+	def mentor_cleanup(self, mentor_update: Union[int, Mentor]):
+		mentors_to_update = []
 
+		if type(mentor_update) is Mentor: #we can just check passed mentor
+			if mentor_update.days_left == 0 or mentor_update.get_available_hours() <= 0:
+				mentors_to_update.append(mentor_update)
+		elif type(mentor_update) is int: #need to check all mentors
+			for mentor in self.mentors:
+				if mentor.days_left == 0 or mentor.get_available_hours() <= 0:
+					mentors_to_update.append(mentor)
+		else:
+			raise ValueError("got bad datatype {0} must pas int or Mentor".format(type(mentor_update)))
+
+		for day in self.pay_days:
+			day.potential_mentors = [mentor for mentor in day.potential_mentors if mentor not in mentors_to_update]
+
+			
 	def assign_all_shifts(self):
-		pass
+		unassigned_days = len(self.pay_days)
+
+		while unassigned_days > 0:
+			self.prioritize_days()
+			mentor = self.assign_shift()
+			self.mentor_cleanup(mentor)
+			unassigned_days = len(self.pay_days)
+		
+
+my_sched = Schedule(2022, 6, 15)
+my_sched.assign_all_shifts()
