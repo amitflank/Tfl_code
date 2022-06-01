@@ -3,8 +3,8 @@ import datetime as dt
 seasonal_shift_info = {
 					'summer': {
 							'dates': {
-									'start': dt.date(dt.date.today().year, 5, 1), 
-									'end':  dt.date(dt.date.today().year, 8, 1)
+									'start': dt.datetime(dt.date.today().year, 5, 1), 
+									'end':  dt.datetime(dt.date.today().year, 8, 1)
 									},
 							'weekday_shifts': {
 								'a_shift': 7,
@@ -39,8 +39,8 @@ seasonal_shift_info = {
 #June info
 mentor_info_june = {
 	'Sav': {
-		'hard_dates': [i for i in range(3,13)] + [i for i in range(24, 28)],
-		'hours': 20,
+		'hard_dates': [i for i in range(3,14)] + [i for i in range(24, 28)],
+		'hours_wanted': 20,
 		'soft_dates' : [] 
 	},
 	'Kinley': {
