@@ -157,17 +157,22 @@ class Day():
 class Schedule():
 
 	def __init__(self, year: int, month: int, len_p1: int):
-		len_month = monthrange(year, month) #get num days in month, used to calc len_p2
-		self.mentors = self.create_mentor_info(len_p1, '<=')
+		len_month = monthrange(year, month)[1] #get num days in month, used to calc len_p2
+		self.mentors = self.create_mentor_info(len_p1, '<=', len_p1)
 		self.pay_days = self.create_pay_days(start_date = dt.datetime(year, month, 1), end_date= dt.datetime(year, month, len_p1))
-	
-	def create_mentor_info(self, len_pay: int, comparator: str) -> List[Mentor]:
+		self.assigned_days: List[Day] = []
+		self.assign_all_shifts()
+		self.mentors = self.create_mentor_info(len_month - len_p1, '<=', len_month)
+		self.pay_days = self.create_pay_days(start_date = dt.datetime(year, month, len_month - len_p1), end_date= dt.datetime(year, month, len_month), offset = len_p1)
+		self.assign_all_shifts()
+
+	def create_mentor_info(self, len_pay: int, comparator: str, end_day: int = 1) -> List[Mentor]:
 		"""Create initial default list of mentors for a given pay period"""
 		mentor_list = [None for _ in mentor_info_june]
 		idx = 0
 		for name, info in mentor_info_june.items():
 			c_info = info.copy()
-			c_info['hard_dates'] = [date for date in info['hard_dates'] if get_truth(date, comparator, len_pay)] 
+			c_info['hard_dates'] = [date for date in info['hard_dates'] if get_truth(date, comparator, end_day)] 
 			c_info['name'] = name
 			c_info['hours_wanted'] = c_info['hours_wanted'] * 2 #2 weeks
 			c_info['len_pay'] = len_pay
@@ -214,9 +219,6 @@ class Schedule():
 		for day in self.pay_days:
 			day.priority_value = (day.get_mentor_days() / total_available_days) 
 
-		#not particularly efficient since we end up needing to sort entire list for a single lookup as values change constantly
-		#However can't think of easy clean solution that can replicate this functionality and it's not worth the hassle
-		#to be to clever about it.
 		self.pay_days.sort(key=lambda day: (day.priority_value,  -day.get_available_mentor_hours())) #costume sort
 
 	def assign_shift(self) -> Union[int, Mentor]:
@@ -252,25 +254,22 @@ class Schedule():
 
 		if update_mentors:
 
-			#not enough mentors to fill shifts, we will just put none to indicate some action must be taken 
-			if len(day.potential_mentors) == 1: #check one b/c have not del assigned mentor yet
+			#if all shifts are full or we are out of mentors we are done w/this day
+			if len(day.potential_mentors) == 1 or not day.available_shifts(): #check one b/c have not del assigned mentor yet
 				for mentor in day.potential_mentors:
 					mentor.days_left -= 1 
+				self.assigned_days.append(self.pay_days[0])
 				del self.pay_days[0] #remove day
 				return 1
 
-			elif day.available_shifts():
+			else: 
 				cur_mentor.days_left -= 1
 				day.potential_mentors.remove(cur_mentor)
 				return cur_mentor
 
-			else:
-				for mentor in day.potential_mentors:
-					mentor.days_left -= 1 
-				del self.pay_days[0] #remove day 
-				return 1
 
 	def mentor_cleanup(self, mentor_update: Union[int, Mentor]):
+		"""Removes mentors who are no longer eligible to work this pay period for potential mentors in all days"""
 		mentors_to_update = []
 
 		if type(mentor_update) is Mentor: #we can just check passed mentor
@@ -288,14 +287,22 @@ class Schedule():
 
 			
 	def assign_all_shifts(self):
+		"""Assigns all shifts for given pay period"""
 		unassigned_days = len(self.pay_days)
 
 		while unassigned_days > 0:
+			#not particularly efficient since we end up needing to sort entire list for every single lookup as values change constantly
+			#However can't think of easy clean solution that can replicate this functionality and it's not worth the hassle
+			#to be to clever about it.
 			self.prioritize_days()
 			mentor = self.assign_shift()
 			self.mentor_cleanup(mentor)
 			unassigned_days = len(self.pay_days)
 		
+		self.assigned_days.sort(key=lambda day:(day.date_info.day)) #sort days in calendar order
 
 my_sched = Schedule(2022, 6, 15)
-my_sched.assign_all_shifts()
+
+for day in my_sched.assigned_days:
+	print(day.mentors_on_shift)
+test = [val.date_info.day for val in my_sched.assigned_days]
