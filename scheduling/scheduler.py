@@ -10,8 +10,10 @@ import datetime as dt
 import operator
 from calendar import monthrange
 from typing import List, Dict, Union
-from bad_db import seasonal_shift_info, mentor_info_june
 from bisect import bisect_left
+import numpy as np
+from bad_db import seasonal_shift_info, mentor_info_june
+
  
 
 
@@ -157,13 +159,14 @@ class Day():
 class Schedule():
 
 	def __init__(self, year: int, month: int, len_p1: int):
+		self.len_p1 = len_p1
 		len_month = monthrange(year, month)[1] #get num days in month, used to calc len_p2
 		self.mentors = self.create_mentor_info(len_p1, '<=', len_p1)
 		self.pay_days = self.create_pay_days(start_date = dt.datetime(year, month, 1), end_date= dt.datetime(year, month, len_p1))
 		self.assigned_days: List[Day] = []
 		self.assign_all_shifts()
 		self.mentors = self.create_mentor_info(len_month - len_p1, '<=', len_month)
-		self.pay_days = self.create_pay_days(start_date = dt.datetime(year, month, len_month - len_p1), end_date= dt.datetime(year, month, len_month), offset = len_p1)
+		self.pay_days = self.create_pay_days(start_date = dt.datetime(year, month, len_month - len_p1 + 1), end_date= dt.datetime(year, month, len_month), offset = len_p1)
 		self.assign_all_shifts()
 
 	def create_mentor_info(self, len_pay: int, comparator: str, end_day: int = 1) -> List[Mentor]:
@@ -228,7 +231,7 @@ class Schedule():
 			1 if all Mentors lost a day otherwise returns mentor who was assigned. Useful for updating mentor eligibility """
 		day = self.pay_days[0] #ordered list so highest prio day is always first
 		update_mentors = True #prevents double updating mentors available days on recursive calls
-		highest_prio = 0 
+		highest_prio = -100
 		cur_mentor = None
 
 		for mentor in day.potential_mentors:
@@ -301,8 +304,75 @@ class Schedule():
 		
 		self.assigned_days.sort(key=lambda day:(day.date_info.day)) #sort days in calendar order
 
+	def get_consecutive_day_cost(self, c_days: int) -> int:
+		"""Calculates penalty for mentors working to many consecutive shifts, returns int"""
+		cost = c_days - 4
+		return cost * cost if cost > 0 else 0
+
+	def track_diversity(self, m_vec: np.array, day, mentor_idxs):
+		num_mentors = len(mentor_idxs)
+		mentors_working = [mentor for mentor in day.mentors_on_shift.values() if mentor != None] #get mentor names
+		v_mentors = np.zeros(num_mentors) #tracks mentors working this day as vector
+			
+		for mentor in mentors_working:
+			idx = mentor_idxs[mentor]
+			v_mentors[idx] += 1 #update mentor vector representation of this day
+			
+		for mentor in mentors_working:
+			idx = mentor_idxs[mentor]
+			m_vec[idx]+= v_mentors #update mentors vector
+
+		#don't think i need a return since pass by reference but check 
+	
+	def update_c_days(self, day: Day, con_men_days: List[str], final_day: bool = False) -> int:
+		"""updates consecutive mentor list and returns cost of any evaluated mentors on passed day"""
+		mentors_working = [mentor for mentor in day.mentors_on_shift.values() if mentor != None] #get mentor names
+		days_cost = 0
+
+		for mentor in self.mentors:
+			if mentor.name in mentors_working and not final_day:
+				con_men_days[mentor.name] += 1
+			else:
+				c_days = con_men_days[mentor.name]
+				con_men_days[mentor.name] = 0
+				days_cost += self.get_consecutive_day_cost(c_days)
+
+		return days_cost
+
+	def get_hour_cost(self) -> int:
+		"""Calculate the penalty for mismatch between mentors desired hours and actual"""
+		total_cost = 0
+		for mentor in self.mentors:
+			diff = mentor.hours_wanted - mentor.hours_pay
+			total_cost += diff * diff
+		return total_cost
+
+	def calc_score(self):
+		first_pay = self.assigned_days[:self.len_p1]
+		second_pay = self.assigned_days[self.len_p1:]
+
+		mentor_idxs = {mentor.name: idx for idx, mentor in enumerate(self.mentors)} #assign vector location to each mentor
+		con_men_days = {mentor.name: 0 for mentor in self.mentors} #tracks mentors consecutive days worked 
+
+		num_mentors = len(mentor_idxs)
+		mentor_vectors = np.zeros(num_mentors, num_mentors) 
+		c_cost  = 0
+
+		for day in self.assigned_days:
+			self.track_diversity(mentor_vectors, day, mentor_idxs)
+			c_cost += self.update_c_days(day, con_men_days)
+		
+		#Find sum total of unique mentors who have worked together
+		#since vectors include their own idx we must remove 1 for each mentor
+		shared_shifts = np.count_nonzero(mentor_vectors) - len(mentor_idxs) * 2 #use a scale factor of 2
+		hour_cost = self.get_hour_cost()
+
+
+			
+
+
 my_sched = Schedule(2022, 6, 15)
 
-for day in my_sched.assigned_days:
-	print(day.mentors_on_shift)
-test = [val.date_info.day for val in my_sched.assigned_days]
+for idx, day in enumerate(my_sched.assigned_days):
+	print(idx, day.mentors_on_shift)
+
