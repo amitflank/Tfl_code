@@ -14,10 +14,6 @@ from bisect import bisect_left
 import numpy as np
 from bad_db import seasonal_shift_info, mentor_info_june
 
- 
-
-
-
 def get_truth(inp, relate, cut):
 	ops = {'>': operator.gt,
 			'<': operator.lt,
@@ -161,13 +157,14 @@ class Schedule():
 	def __init__(self, year: int, month: int, len_p1: int):
 		self.len_p1 = len_p1
 		len_month = monthrange(year, month)[1] #get num days in month, used to calc len_p2
-		self.mentors = self.create_mentor_info(len_p1, '<=', len_p1)
-		self.pay_days = self.create_pay_days(start_date = dt.datetime(year, month, 1), end_date= dt.datetime(year, month, len_p1))
+		self.m1 = self.create_mentor_info(len_p1, '<=', len_p1)
+		self.pay1 = self.create_pay_days(self.m1, dt.datetime(year, month, 1), dt.datetime(year, month, len_p1))
 		self.assigned_days: List[Day] = []
-		self.assign_all_shifts()
-		self.mentors = self.create_mentor_info(len_month - len_p1, '<=', len_month)
-		self.pay_days = self.create_pay_days(start_date = dt.datetime(year, month, len_month - len_p1 + 1), end_date= dt.datetime(year, month, len_month), offset = len_p1)
-		self.assign_all_shifts()
+
+		self.assign_all_shifts(self.pay1, self.m1)
+		self.m2 = self.create_mentor_info(len_month - len_p1, '<=', len_month)
+		self.pay2 = self.create_pay_days(self.m2, start_date = dt.datetime(year, month, len_month - len_p1 + 1), end_date= dt.datetime(year, month, len_month), offset = len_p1)
+		self.assign_all_shifts(self.pay2, self.m2)
 
 	def create_mentor_info(self, len_pay: int, comparator: str, end_day: int = 1) -> List[Mentor]:
 		"""Create initial default list of mentors for a given pay period"""
@@ -186,7 +183,7 @@ class Schedule():
 		return mentor_list
 
 
-	def create_pay_days(self, start_date: dt.datetime, end_date: dt.datetime, offset: int = 0) -> List[Day]:
+	def create_pay_days(self, mentors: List[Mentor], start_date: dt.datetime, end_date: dt.datetime, offset: int = 0) -> List[Day]:
 		"""Create initial set of empty days for a given pay period
 		
 		Args:
@@ -204,7 +201,7 @@ class Schedule():
 			cur_date += dt.timedelta(days=1)
 			idx += 1
 		
-		for mentor in self.mentors:
+		for mentor in mentors:
 
 			#gets all available days in pay period which mentor can work
 			available_days = [i for i in range(start_date.day, end_date.day + 1)]
@@ -216,20 +213,20 @@ class Schedule():
 
 		return days
 
-	def prioritize_days(self):
+	def prioritize_days(self, pay_days: List[Day]):
 		"""We prioritize using mentors available for each days shift over total number of workable shifts over pay period"""
-		total_available_days = sum([day.get_mentor_days() for day in self.pay_days]) #total workable shifts
-		for day in self.pay_days:
+		total_available_days = sum([day.get_mentor_days() for day in pay_days]) #total workable shifts
+		for day in pay_days:
 			day.priority_value = (day.get_mentor_days() / total_available_days) 
 
-		self.pay_days.sort(key=lambda day: (day.priority_value,  -day.get_available_mentor_hours())) #costume sort
+		pay_days.sort(key=lambda day: (day.priority_value,  -day.get_available_mentor_hours())) #costume sort
 
-	def assign_shift(self) -> Union[int, Mentor]:
+	def assign_shift(self, pay_days: List[Day]) -> Union[int, Mentor]:
 		"""assign first shift in highest prio day if possible.
 		
 		Returns:
 			1 if all Mentors lost a day otherwise returns mentor who was assigned. Useful for updating mentor eligibility """
-		day = self.pay_days[0] #ordered list so highest prio day is always first
+		day = pay_days[0] #ordered list so highest prio day is always first
 		update_mentors = True #prevents double updating mentors available days on recursive calls
 		highest_prio = -100
 		cur_mentor = None
@@ -252,7 +249,7 @@ class Schedule():
 			if not success:
 				update_mentors = False #recursive call will update mentor days don't assign in this stack call
 				day.potential_mentors.remove(cur_mentor)
-				self.prioritize_days() #mentor deletion might change day prio's so lets resort days
+				self.prioritize_days(pay_days) #mentor deletion might change day prio's so lets resort days
 				self.assign_shift()
 
 		if update_mentors:
@@ -261,8 +258,8 @@ class Schedule():
 			if len(day.potential_mentors) == 1 or not day.available_shifts(): #check one b/c have not del assigned mentor yet
 				for mentor in day.potential_mentors:
 					mentor.days_left -= 1 
-				self.assigned_days.append(self.pay_days[0])
-				del self.pay_days[0] #remove day
+				self.assigned_days.append(pay_days[0])
+				del pay_days[0] #remove day
 				return 1
 
 			else: 
@@ -271,7 +268,7 @@ class Schedule():
 				return cur_mentor
 
 
-	def mentor_cleanup(self, mentor_update: Union[int, Mentor]):
+	def mentor_cleanup(self, mentor_update: Union[int, Mentor], pay_days: List[Day], mentors: List[Mentor]):
 		"""Removes mentors who are no longer eligible to work this pay period for potential mentors in all days"""
 		mentors_to_update = []
 
@@ -279,28 +276,28 @@ class Schedule():
 			if mentor_update.days_left == 0 or mentor_update.get_available_hours() <= 0:
 				mentors_to_update.append(mentor_update)
 		elif type(mentor_update) is int: #need to check all mentors
-			for mentor in self.mentors:
+			for mentor in mentors:
 				if mentor.days_left == 0 or mentor.get_available_hours() <= 0:
 					mentors_to_update.append(mentor)
 		else:
 			raise ValueError("got bad datatype {0} must pas int or Mentor".format(type(mentor_update)))
 
-		for day in self.pay_days:
+		for day in pay_days:
 			day.potential_mentors = [mentor for mentor in day.potential_mentors if mentor not in mentors_to_update]
 
 			
-	def assign_all_shifts(self):
+	def assign_all_shifts(self, pay_days: List[Day], mentors: List[Mentor]):
 		"""Assigns all shifts for given pay period"""
-		unassigned_days = len(self.pay_days)
+		unassigned_days = len(pay_days)
 
 		while unassigned_days > 0:
 			#not particularly efficient since we end up needing to sort entire list for every single lookup as values change constantly
 			#However can't think of easy clean solution that can replicate this functionality and it's not worth the hassle
 			#to be to clever about it.
-			self.prioritize_days()
-			mentor = self.assign_shift()
-			self.mentor_cleanup(mentor)
-			unassigned_days = len(self.pay_days)
+			self.prioritize_days(pay_days)
+			mentor = self.assign_shift(pay_days)
+			self.mentor_cleanup(mentor, pay_days, mentors)
+			unassigned_days = len(pay_days)
 		
 		self.assigned_days.sort(key=lambda day:(day.date_info.day)) #sort days in calendar order
 
@@ -313,23 +310,21 @@ class Schedule():
 		num_mentors = len(mentor_idxs)
 		mentors_working = [mentor for mentor in day.mentors_on_shift.values() if mentor != None] #get mentor names
 		v_mentors = np.zeros(num_mentors) #tracks mentors working this day as vector
-			
+		
 		for mentor in mentors_working:
-			idx = mentor_idxs[mentor]
+			idx = mentor_idxs[mentor.name]
 			v_mentors[idx] += 1 #update mentor vector representation of this day
 			
 		for mentor in mentors_working:
-			idx = mentor_idxs[mentor]
+			idx = mentor_idxs[mentor.name]
 			m_vec[idx]+= v_mentors #update mentors vector
-
-		#don't think i need a return since pass by reference but check 
 	
-	def update_c_days(self, day: Day, con_men_days: List[str], final_day: bool = False) -> int:
+	def update_c_days(self, mentors: List[Mentor], day: Day, con_men_days: List[str], final_day: bool = False) -> int:
 		"""updates consecutive mentor list and returns cost of any evaluated mentors on passed day"""
-		mentors_working = [mentor for mentor in day.mentors_on_shift.values() if mentor != None] #get mentor names
+		mentors_working = [mentor.name for mentor in day.mentors_on_shift.values() if mentor != None] #get mentor names
 		days_cost = 0
-
-		for mentor in self.mentors:
+	
+		for mentor in mentors:
 			if mentor.name in mentors_working and not final_day:
 				con_men_days[mentor.name] += 1
 			else:
@@ -339,40 +334,51 @@ class Schedule():
 
 		return days_cost
 
-	def get_hour_cost(self) -> int:
+	def get_hour_cost(self, mentors: List[Mentor]) -> int:
 		"""Calculate the penalty for mismatch between mentors desired hours and actual"""
 		total_cost = 0
-		for mentor in self.mentors:
+		for mentor in mentors:
 			diff = mentor.hours_wanted - mentor.hours_pay
-			total_cost += diff * diff
+			print(diff, mentor, mentor.hours_pay)
+			total_cost += diff 
 		return total_cost
 
-	def calc_score(self):
-		first_pay = self.assigned_days[:self.len_p1]
-		second_pay = self.assigned_days[self.len_p1:]
+	def calc_score(self, mentor_list: List[Mentor], day_idx: int, start: bool = True) -> int:
+		"""calculates the cost of a schedule"""
+		#first or second pay shift
+		if start:
+			pay_period = self.assigned_days[:day_idx]
+		else:
+			pay_period = self.assigned_days[day_idx:]
 
-		mentor_idxs = {mentor.name: idx for idx, mentor in enumerate(self.mentors)} #assign vector location to each mentor
-		con_men_days = {mentor.name: 0 for mentor in self.mentors} #tracks mentors consecutive days worked 
+		mentor_idxs = {mentor.name: idx for idx, mentor in enumerate(mentor_list)} #assign vector location to each mentor
+		con_men_days = {mentor.name: 0 for mentor in mentor_list} #tracks mentors consecutive days worked 
 
 		num_mentors = len(mentor_idxs)
-		mentor_vectors = np.zeros(num_mentors, num_mentors) 
+		mentor_vectors = np.zeros((num_mentors, num_mentors))
 		c_cost  = 0
 
-		for day in self.assigned_days:
+		for day in pay_period:
 			self.track_diversity(mentor_vectors, day, mentor_idxs)
-			c_cost += self.update_c_days(day, con_men_days)
+			c_cost += self.update_c_days(mentor_list, day, con_men_days)
 		
 		#Find sum total of unique mentors who have worked together
 		#since vectors include their own idx we must remove 1 for each mentor
 		shared_shifts = np.count_nonzero(mentor_vectors) - len(mentor_idxs) * 2 #use a scale factor of 2
-		hour_cost = self.get_hour_cost()
+		hour_cost = self.get_hour_cost(mentor_list)
+		print(c_cost, hour_cost, shared_shifts)
+		return c_cost + hour_cost + shared_shifts
+	
+	def calc_all_scores(self):
+		"""Calculate scores for both pay periods"""
+		c1 = self.calc_score(self.m1, self.len_p1)
+		c2 = self.calc_score(self.m2, self.len_p1, start = False)
+		print(c1, c2)
 
 
-			
-
-
+class Optimizer:
+	"""Goal of this class is to take some existing schedule and rearange it in some interesting way given a cost fxn"""
 my_sched = Schedule(2022, 6, 15)
-
-for idx, day in enumerate(my_sched.assigned_days):
-	print(idx, day.mentors_on_shift)
-
+my_sched.calc_all_scores()
+#for idx, day in enumerate(my_sched.assigned_days):
+#	print(idx, day.mentors_on_shift)
