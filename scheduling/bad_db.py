@@ -4,37 +4,90 @@ seasonal_shift_info = {
 					'summer': {
 							'dates': {
 									'start': dt.datetime(dt.date.today().year, 5, 1), 
-									'end':  dt.datetime(dt.date.today().year, 8, 1)
+									'end':  dt.datetime(dt.date.today().year, 7, 31)
 									},
-							'weekday_shifts': {
-								'a_shift': 7,
-								'b_shift': 7,
-								'c_shift': 3
-									},
-							'weekend_shifts': {
-								'a_shift': 10,
-								'b_shift': 10,
-								'c_shift': 6
-									}
+							'shift_info': {
+								'Sunday': {
+									'a_shift': 9,
+									'b_shift': 9
+								}, 
+								'Monday': {
+									'a_shift': 6,
+									'b_shift': 7,
+									'c_shift': 3
 								},
+								'Tuesday': {
+									'a_shift': 7,
+									'b_shift': 7,
+									'c_shift': 3
+								},
+								
+								'Wendsday': {
+									'a_shift': 7,
+									'b_shift': 7,
+									'c_shift': 3
+								},
+								'Thursday': {
+									'a_shift': 7,
+									'b_shift': 7,
+									'c_shift': 3
+								},
+								'Friday': {
+									'a_shift': 7,
+									'b_shift': 7,
+									'c_shift': 3
+								},
+								'Saturday': {
+									'a_shift': 7,
+									'b_shift': 7,
+									'c_shift': 3
+								},
+						},
+					},
 
 					'winter': {
 							'dates': {
-								'start': dt.date(dt.date.today().year, 8, 2), 
+								'start': dt.date(dt.date.today().year, 8, 1), 
 								'end':  dt.date(dt.date.today().year + 1, 4, 30)
-									},
-							'weekday_shifts': {
-								'a_shift': 6,
-								'b_shift': 6,
-								'c_shift': 3
-									},
-							'weekend_shifts': {
-								'a_shift': 10,
-								'b_shift': 10,
-								'c_shift': 6
-									}
+							},
+							'shift_info': {
+								'Sunday': {
+									'a_shift': 9,
+									'b_shift': 9
+								}, 
+								'Monday': {
+									'a_shift': 6,
+									'b_shift': 6,
+									'c_shift': 3
 								},
-						}
+								'Tuesday': {
+									'a_shift': 6,
+									'b_shift': 6,
+									'c_shift': 3
+								},
+								
+								'Wendsday': {
+									'a_shift': 6,
+									'b_shift': 6,
+								},
+								'Thursday': {
+									'a_shift': 6,
+									'b_shift': 6,
+									'c_shift': 3
+								},
+								'Friday': {
+									'a_shift': 8,
+									'b_shift': 8,
+									'c_shift': 3
+								},
+								'Saturday': {
+									'a_shift': 11,
+									'b_shift': 11,
+									'c_shift': 4
+								},
+							},
+						},
+					}
 
 #June info
 mentor_info_june = {
