@@ -91,37 +91,37 @@ seasonal_shift_info = {
 
 #June info
 mentor_info_june = {
-	'Sav': {
+	'Kate S': {
 		'hard_dates': [i for i in range(3,14)] + [i for i in range(24, 28)],
 		'hours_wanted': 20,
 		'soft_dates' : [] 
 	},
-	'Kinley': {
-		'hard_dates': [i for i in range(1,7)] + [i for i in range(22, 26)], #range not end inclusive so +1 to it
-		'hours_wanted': 40, 
-		'soft_dates' : []
-	},  
-	'Kate': {
+	'Kate D': {
 		'hard_dates': [],
-		'hours_wanted': 30,
+		'hours_wanted': 20,
 		'soft_dates' : []
 	},
 	'Braxton': {
 		'hard_dates': [i for i in range(13, 19)],
-		'hours_wanted': 40, 
+		'hours_wanted': 20, 
 		'soft_dates' : []
 	},
 	'Delcie':{
 		'hard_dates': [i for i in range(1, 17)],
-		'hours_wanted': 40, 
+		'hours_wanted': 20, 
 		'soft_dates' : []
 	},
 	'Mitch': {
 		'hard_dates': [i for i in range(2, 5)],
-		'hours_wanted': 30,
+		'hours_wanted': 20,
 		'soft_dates' : []
 	},
 	'Devon': {
+		'hard_dates': [4] + [i for i in range(17, 20)] + [i for i in range(26, 30)],
+		'hours_wanted': 15,
+		'soft_dates' : []
+	},
+	'Levi': {
 		'hard_dates': [4] + [i for i in range(17, 20)] + [i for i in range(26, 30)],
 		'hours_wanted': 20,
 		'soft_dates' : []
