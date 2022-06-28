@@ -96,6 +96,9 @@ class Day():
 		Raises error if  empty shift is not available"""
 		for shift, slot in self.mentors_on_shift.items():
 			if slot is None:
+				if mentor is None:
+					return False
+
 				legal_add = mentor.legal_shift_add(self.shifts[shift])
 
 				if legal_add:
@@ -120,6 +123,9 @@ class Day():
 					lowest_hours = shift_len
 					cur_shift = shift
 
+		if mentor is None:
+			return False
+
 		legal_add = mentor.legal_shift_add(lowest_hours)
 
 		if legal_add:
@@ -139,8 +145,8 @@ class Day():
 		"""get season to which this day belongs"""
 		for season, season_info in seasonal_shift_info.items():
 
-			start_date = season_info['dates']['start'].date()
-			end_date = season_info['dates']['end'].date() 
+			start_date = season_info.copy()['dates']['start'].date()
+			end_date = season_info.copy()['dates']['end'].date() 
 
 			if self.date_info.date() >= start_date and self.date_info.date() <= end_date:
 				return season
@@ -165,10 +171,11 @@ class Schedule():
 		self.m1 = self.create_mentor_info(len_p1, '<=', len_p1)
 		self.pay1 = self.create_pay_days(self.m1, dt.datetime(year, month, 1), dt.datetime(year, month, len_p1))
 		self.assigned_days: List[Day] = []
+		print(len_p1, len_month)
 
 		self.assign_all_shifts(self.pay1, self.m1)
-		self.m2 = self.create_mentor_info(len_month - len_p1, '<=', len_month)
-		self.pay2 = self.create_pay_days(self.m2, start_date = dt.datetime(year, month, len_month - len_p1 + 1), end_date= dt.datetime(year, month, len_month), offset = len_p1)
+		self.m2 = self.create_mentor_info(len_month - len_p1, '>=', len_month)
+		self.pay2 = self.create_pay_days(self.m2, start_date = dt.datetime(year, month, len_month - (len_month - len_p1) + 1), end_date= dt.datetime(year, month, len_month), offset = len_p1)
 		self.assign_all_shifts(self.pay2, self.m2)
 
 	def create_mentor_info(self, len_pay: int, comparator: str, end_day: int = 1) -> List[Mentor]:
@@ -253,9 +260,12 @@ class Schedule():
 			#if we still can't assign we will remove this mentor and try someone else
 			if not success:
 				update_mentors = False #recursive call will update mentor days don't assign in this stack call
-				day.potential_mentors.remove(cur_mentor)
+				if cur_mentor is None:
+					del pay_days[0] #remove day
+				else:
+					day.potential_mentors.remove(cur_mentor)
 				self.prioritize_days(pay_days) #mentor deletion might change day prio's so lets resort days
-				self.assign_shift()
+				self.assign_shift(pay_days)
 
 		if update_mentors:
 
@@ -301,7 +311,8 @@ class Schedule():
 			#to be to clever about it.
 			self.prioritize_days(pay_days)
 			mentor = self.assign_shift(pay_days)
-			self.mentor_cleanup(mentor, pay_days, mentors)
+			if mentor is not None:
+				self.mentor_cleanup(mentor, pay_days, mentors)
 			unassigned_days = len(pay_days)
 		
 		self.assigned_days.sort(key=lambda day:(day.date_info.day)) #sort days in calendar order
@@ -405,7 +416,7 @@ class Optimizer:
 		
 		pass
 
-my_sched = Schedule(2022, 6, 15)
+my_sched = Schedule(2022, 8, 15)
 my_sched.calc_all_scores()
 for idx, day in enumerate(my_sched.assigned_days):
 	print(idx + 1, day.mentors_on_shift)

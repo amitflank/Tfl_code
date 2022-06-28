@@ -47,8 +47,8 @@ seasonal_shift_info = {
 
 					'winter': {
 							'dates': {
-								'start': dt.date(dt.date.today().year, 8, 1), 
-								'end':  dt.date(dt.date.today().year + 1, 4, 30)
+								'start': dt.datetime(dt.date.today().year, 8, 1), 
+								'end':  dt.datetime(dt.date.today().year + 1, 4, 30)
 							},
 							'shift_info': {
 								'Sunday': {

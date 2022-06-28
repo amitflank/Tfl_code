@@ -3,5 +3,8 @@
         "."
     ],
     "python.testing.unittestEnabled": false,
-    "python.testing.pytestEnabled": true
+    "python.testing.pytestEnabled": true,
+    "editor.insertSpaces": true,
+    "editor.tabSize": 4,
+    "editor.detectIndentation": true
 }
