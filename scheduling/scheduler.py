@@ -9,7 +9,7 @@ metrics:
 import datetime as dt
 import operator
 from calendar import monthrange
-from typing import List, Dict, Union
+from typing import List, Dict, Union, Tuple
 from bisect import bisect_left
 import numpy as np
 from bad_db import seasonal_shift_info, mentor_info_june
@@ -64,10 +64,11 @@ class Day():
 
 	def __init__(self, date_info: dt.datetime):
 		self.date_info = date_info
-		self.is_weekday = date_info.weekday() < 5
+		self.week_day_map = {'Sunday': 6, 'Monday': 0, 'Tuesday': 1, 'Wendsday': 2, 'Thursday': 3, 'Friday': 4, 'Saturday': 5}
+		self.weekday = date_info.weekday()
 		self.season = self.get_season()
-		self.shifts = self.get_shifts(self.season)
-		self.mentors_on_shift = {shift: None for shift in self.shifts} 
+		self.shifts = self.get_shifts(self.season, self.weekday)
+		self.mentors_on_shift: Dict[str, Mentor] = {shift: None for shift in self.shifts} 
 		self.total_hours = sum(self.shifts.values())
 		self.assigned_hours = 0
 		self.potential_mentors: List[Mentor] = []
@@ -146,11 +147,15 @@ class Day():
 		
 		raise ValueError('Could not find season that matched given date')
 	
-	def get_shifts(self, season: str) -> Dict[str, int]:
+	def get_shifts(self, season: str, day: int) -> Dict[str, int]:
 		"""get the shifts required for this day"""
-		if self.is_weekday:
-			return seasonal_shift_info[season]['weekday_shifts'].copy()
-		return seasonal_shift_info[season]['weekend_shifts'].copy()
+
+		#I hate this, but I also hate the idea of numerical keys though im  not sure if this monstrosity justifies 
+		#not using them. 
+		position = list(self.week_day_map.values()).index(day) #get index of key of shift for given weekday
+		shift_info_keys = list(seasonal_shift_info[season]['shift_info'].keys())
+		weekday = shift_info_keys[position]
+		return seasonal_shift_info[season]['shift_info'][weekday].copy()
 
 class Schedule():
 
@@ -303,7 +308,7 @@ class Schedule():
 
 	def get_consecutive_day_cost(self, c_days: int) -> int:
 		"""Calculates penalty for mentors working to many consecutive shifts, returns int"""
-		cost = c_days - 4
+		cost = c_days - 4 #no penalty for 4 or less consecutive days worked
 		return cost * cost if cost > 0 else 0
 
 	def track_diversity(self, m_vec: np.array, day, mentor_idxs):
@@ -339,10 +344,19 @@ class Schedule():
 		total_cost = 0
 		for mentor in mentors:
 			diff = mentor.hours_wanted - mentor.hours_pay
-			print(diff, mentor, mentor.hours_pay)
 			total_cost += diff 
 		return total_cost
 
+	def calc_soft_cost(self, pay_days: List[Day], cost =  3) -> int:
+		"""calculate the cost of mentors working on soft restricted dates. Defualt cost is 3 per day worked"""
+		total_cost = 0
+		for day in pay_days:
+			for mentor in day.mentors_on_shift.values():
+				if day.date_info.day in mentor_info_june[mentor.name]['soft_dates']:
+					total_cost += cost
+		return total_cost
+
+		
 	def calc_score(self, mentor_list: List[Mentor], day_idx: int, start: bool = True) -> int:
 		"""calculates the cost of a schedule"""
 		#first or second pay shift
@@ -366,19 +380,32 @@ class Schedule():
 		#since vectors include their own idx we must remove 1 for each mentor
 		shared_shifts = np.count_nonzero(mentor_vectors) - len(mentor_idxs) * 2 #use a scale factor of 2
 		hour_cost = self.get_hour_cost(mentor_list)
-		print(c_cost, hour_cost, shared_shifts)
-		return c_cost + hour_cost + shared_shifts
+		#soft_cost = self.calc_soft_cost(pay_period)
+		return c_cost + hour_cost + shared_shifts 
 	
-	def calc_all_scores(self):
+	def calc_all_scores(self) -> Tuple[int, int]:
 		"""Calculate scores for both pay periods"""
 		c1 = self.calc_score(self.m1, self.len_p1)
 		c2 = self.calc_score(self.m2, self.len_p1, start = False)
-		print(c1, c2)
+		return c1, c2
 
 
 class Optimizer:
-	"""Goal of this class is to take some existing schedule and rearange it in some interesting way given a cost fxn"""
+	"""Goal of this class is to take some existing schedule and rearrange it in some interesting way given a cost fxn.
+	Just going to be gradient descent with annealing not going to try and be to fancy"""
+
+	def __init__(self, schedule: Schedule):
+		self.schedule = schedule
+		self.c1, self.c2 = schedule.calc_all_scores
+		self.cur_pay = schedule.pay1.copy()
+		self.cur_mentors = schedule.m1.copy()
+
+
+	def break_con_days(self):
+		
+		pass
+
 my_sched = Schedule(2022, 6, 15)
 my_sched.calc_all_scores()
-#for idx, day in enumerate(my_sched.assigned_days):
-#	print(idx, day.mentors_on_shift)
+for idx, day in enumerate(my_sched.assigned_days):
+	print(idx + 1, day.mentors_on_shift)
