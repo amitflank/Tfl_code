@@ -25,6 +25,7 @@ def valid_input(idx: int, inp: str) -> bool:
     if idx == 0 or idx == 1:
         try:
             int(inp)
+            print("got bad filename no action was taken")
             return False
         except ValueError:
             return True
@@ -35,28 +36,28 @@ def valid_input(idx: int, inp: str) -> bool:
             assert int(inp) > 2000 and int(inp) < 3000
             return True
         except:
+            print("got bad year value: {0}, no action was taken".format(inp))
             return False
     elif idx == 3:
         try: 
             assert int(inp) >= 1 and int(inp) <= 12
             return True
         except:
+            print("got bad month value: {0}, no action was taken".format(inp))
             return False
     elif idx == 4:
         try: 
             assert int(inp) >= 1 and int(inp) <= 31
             return True
         except:
+            print("got bad pay period length: {0}, no action was taken".format(inp))
             return False
     else:
         print('must have exactly four input arguments')
         return False 
 
 if __name__ == "__main__":
-    print(f"Arguments count: {len(sys.argv)}")
     valid_in = True
-    print(len(sys.argv))
-    print(sys.argv)
     if len(sys.argv) != 5:
         print('must have exactly four input arguments')
     else:    
