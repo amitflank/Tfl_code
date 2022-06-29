@@ -413,8 +413,3 @@ class Optimizer:
 
 	def break_con_days(self):
 		pass
-
-my_sched = Schedule(2022, 8, 15)
-my_sched.calc_all_scores()
-for idx, day in enumerate(my_sched.assigned_days):
-	print(idx + 1, day.mentors_on_shift)
