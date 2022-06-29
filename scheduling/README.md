@@ -5,8 +5,7 @@ Use following command:
 
 It will generate a new csv file in this folder with scheduled information
 
-Example: python spread_gen.py my_file 2022 8 15
-
+Example: python spread_gen.py August 2022 8 15
 
 This command would ask the scheduler to genrate a schdule for august 2022, with the first pay period ending on the 15th. 
-It would then create a file called my_file.csv.
+It would then create a file called August.csv.
