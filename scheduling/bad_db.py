@@ -101,13 +101,13 @@ mentor_info_june = {
 		'hours_wanted': 20,
 		'soft_dates' : []
 	},
-	'Braxton': {
-		'hard_dates': [i for i in range(5,8)],
+	'Delcie':{
+		'hard_dates': [i for i in range(12,15)],
 		'hours_wanted': 20, 
 		'soft_dates' : []
 	},
-	'Delcie':{
-		'hard_dates': [i for i in range(12,15)],
+	'Braxton': {
+		'hard_dates': [i for i in range(5,8)],
 		'hours_wanted': 20, 
 		'soft_dates' : []
 	},
