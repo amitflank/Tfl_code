@@ -64,7 +64,7 @@ class Day():
 
 	def __init__(self, date_info: dt.datetime):
 		self.date_info = date_info
-		self.week_day_map = {'Sunday': 6, 'Monday': 0, 'Tuesday': 1, 'Wendsday': 2, 'Thursday': 3, 'Friday': 4, 'Saturday': 5}
+		self.week_day_map = {'Sunday': 6, 'Monday': 0, 'Tuesday': 1, 'Wednesday': 2, 'Thursday': 3, 'Friday': 4, 'Saturday': 5}
 		self.weekday = date_info.weekday()
 		self.season = self.get_season()
 		self.shifts = self.get_shifts(self.season, self.weekday)

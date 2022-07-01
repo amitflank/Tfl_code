@@ -8,7 +8,7 @@ def week_day_mapper(day: Day):
     #I hate this, but I also hate the idea of numerical keys though im  not sure if this monstrosity justifies 
     #not using them.
     year, month, day = day.date_info.year, day.date_info.month, day.date_info.day
-    week_day_map = {'Sunday': 6, 'Monday': 0, 'Tuesday': 1, 'Wendsday': 2, 'Thursday': 3, 'Friday': 4, 'Saturday': 5}
+    week_day_map = {'Sunday': 6, 'Monday': 0, 'Tuesday': 1, 'Wednesday': 2, 'Thursday': 3, 'Friday': 4, 'Saturday': 5}
     int_date = dt.date(year, month, day).weekday()
     position = list(week_day_map.values()).index(int_date) #get index of key of shift for given weekday
     week_keys = list(week_day_map.keys())

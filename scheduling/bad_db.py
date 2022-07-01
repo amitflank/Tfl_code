@@ -22,7 +22,7 @@ seasonal_shift_info = {
 									'c_shift': 3
 								},
 								
-								'Wendsday': {
+								'Wednesday': {
 									'a_shift': 7,
 									'b_shift': 7,
 									'c_shift': 3
@@ -66,7 +66,7 @@ seasonal_shift_info = {
 									'c_shift': 3
 								},
 								
-								'Wendsday': {
+								'Wednesday': {
 									'a_shift': 6,
 									'b_shift': 6,
 								},
@@ -93,7 +93,7 @@ seasonal_shift_info = {
 mentor_info_june = {
 	'Devon': {
 		'hard_dates': [i for i in range (2,6)] + [7] + [i for i in range (9,13)] + [14] + [i for i in range (16,20)] + [21] + [i for i in range (23,27)]+ [28] + [30],
-		'hours_wanted': 10,
+		'hours_wanted': 14,
 		'soft_dates' : []
 	},
 	'Kate D': {
@@ -102,28 +102,28 @@ mentor_info_june = {
 		'soft_dates' : []
 	},
 	'Braxton': {
-		'hard_dates': [1],
+		'hard_dates': [i for i in range(5,8)],
 		'hours_wanted': 20, 
 		'soft_dates' : []
 	},
 	'Delcie':{
-		'hard_dates': [8],
+		'hard_dates': [i for i in range(12,15)],
 		'hours_wanted': 20, 
 		'soft_dates' : []
 	},
 	'Mitch': {
-		'hard_dates': [15],
+		'hard_dates': [i for i in range(19,22)],
 		'hours_wanted': 20,
 		'soft_dates' : []
 	},
 	'Levi': {
-		'hard_dates': [22],
+		'hard_dates': [i for i in range(26,29)],
 		'hours_wanted': 20,
 		'soft_dates' : []
 	},
 	'Kate S': {
 		'hard_dates': [1] + [7] + [8] + [14] + [15] + [22] + [28] + [29],
-		'hours_wanted': 20,
+		'hours_wanted': 15,
 		'soft_dates' : [] 
 	}
 }
