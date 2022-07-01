@@ -1,7 +1,7 @@
 # How to make a spreadsheet
 
 Use following command:
->python gen_spread.py name_of_desired_output_file year month first_pay_period_length
+>python gen_spread.py name_of_desired_output_file year month first_pay_period_length[^1]
 
 It will generate a new csv file in this folder with scheduled information
 
@@ -11,6 +11,4 @@ Example:
 This command would ask the scheduler to genrate a schdule for august 2022, with the first pay period ending on the 15th. 
 It would then create a file called August.csv.
 
-[^1]: My reference.
-
-Note: Must by in scheduling directory for this command to work [^1]
+[^1]: Note: Must by in scheduling directory for this command to work 
