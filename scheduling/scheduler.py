@@ -165,13 +165,11 @@ class Schedule():
 		self.m1 = self.create_mentor_info(len_p1, '<=', len_p1)
 		self.pay1 = self.create_pay_days(self.m1, dt.datetime(year, month, 1), dt.datetime(year, month, len_p1))
 		self.assigned_days: List[Day] = []
-		#print(len_p1, len_month)
 
 		self.assign_all_shifts(self.pay1, self.m1)
-		self.m2 = self.create_mentor_info(len_month - len_p1, '>=', len_month)
+		self.m2 = self.create_mentor_info(len_month - len_p1, '>', len_p1)
 		self.pay2 = self.create_pay_days(self.m2, start_date = dt.datetime(year, month, len_month - (len_month - len_p1) + 1), end_date= dt.datetime(year, month, len_month), offset = len_p1)
 		self.assign_all_shifts(self.pay2, self.m2)
-		a= 2
 
 	def create_mentor_info(self, len_pay: int, comparator: str, end_day: int = 1) -> List[Mentor]:
 		"""Create initial default list of mentors for a given pay period"""
@@ -214,7 +212,6 @@ class Schedule():
 			#gets all available days in pay period which mentor can work
 			available_days = [i for i in range(start_date.day, end_date.day + 1)]
 			available_days = [x for x in available_days if x not in mentor.hard_dates] 
-
 			#assign which mentors can work on given day
 			for date in available_days:
 				days[date - offset - 1].add_potential_mentor(mentor)
