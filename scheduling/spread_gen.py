@@ -1,7 +1,7 @@
 import sys
 import csv
 from scheduler import Schedule, Day
-from bad_db import seasonal_shift_info, mentor_info_june
+from bad_db import seasonal_shift_info, mentor_info
 import datetime as dt
 
 def week_day_mapper(day: Day):
@@ -42,7 +42,7 @@ def write_to_csv(schedule: Schedule, file_name: str):
                 row[6] =  schedule.m1[idx].hours_pay
                 row[7] = schedule.m2[idx].hours_pay
                 row[8] = schedule.m1[idx].hours_wanted
-                row[9] = mentor_info_june[schedule.m1[idx].name]['hard_dates']
+                row[9] = mentor_info[schedule.m1[idx].name]['hard_dates']
             writer.writerow(row)
 
 
