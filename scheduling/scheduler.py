@@ -12,7 +12,7 @@ from calendar import monthrange
 from typing import List, Dict, Union, Tuple
 from bisect import bisect_left
 import numpy as np
-from bad_db import seasonal_shift_info, mentor_info_june
+from bad_db import seasonal_shift_info, mentor_info
 
 def get_truth(inp, relate, cut):
 	ops = {'>': operator.gt,
@@ -173,10 +173,10 @@ class Schedule():
 
 	def create_mentor_info(self, len_pay: int, comparator: str, end_day: int = 1) -> List[Mentor]:
 		"""Create initial default list of mentors for a given pay period"""
-		mentor_list = [None for _ in mentor_info_june]
+		mentor_list = [None for _ in mentor_info]
 		idx = 0
 
-		for name, info in mentor_info_june.items():
+		for name, info in mentor_info.items():
 			c_info = info.copy()
 			c_info['hard_dates'] = [date for date in info['hard_dates'] if get_truth(date, comparator, end_day)] 
 			c_info['name'] = name
@@ -359,7 +359,7 @@ class Schedule():
 		total_cost = 0
 		for day in pay_days:
 			for mentor in day.mentors_on_shift.values():
-				if day.date_info.day in mentor_info_june[mentor.name]['soft_dates']:
+				if day.date_info.day in mentor_info[mentor.name]['soft_dates']:
 					total_cost += cost
 		return total_cost
 
