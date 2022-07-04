@@ -49,7 +49,7 @@ class Mentor():
 
 	def legal_shift_add(self, shift_len: int):
 		"""checks if adding new shifts leads to overtime"""
-		return self.hours_pay + shift_len < 80 
+		return self.hours_pay + shift_len <= 80 
 		
 	def __radd__(self, other):
 		return other + self.get_available_hours()
