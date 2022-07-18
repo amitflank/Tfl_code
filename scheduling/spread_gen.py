@@ -1,7 +1,7 @@
 import sys
 import csv
 from scheduler import Schedule, Day
-from bad_db import seasonal_shift_info, mentor_info
+from bad_db import mentor_info
 import datetime as dt
 
 def week_day_mapper(day: Day):
