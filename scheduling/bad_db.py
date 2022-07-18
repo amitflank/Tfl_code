@@ -126,3 +126,12 @@ mentor_info = {
 		'soft_dates' : [] 
 	}
 }
+
+holidays = {
+	'shift_info': {
+		'a_shift': 10,
+		'b_shift': 10,
+		'c_shift': 5
+	},
+	'dates': [3,4], #add during relevant month, include only day, Example: when scheduling for july add 4 to this list
+}
