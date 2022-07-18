@@ -12,7 +12,7 @@ from calendar import monthrange
 from typing import List, Dict, Union, Tuple
 from bisect import bisect_left
 import numpy as np
-from bad_db import seasonal_shift_info, mentor_info
+from bad_db import seasonal_shift_info, mentor_info, holidays
 
 def get_truth(inp, relate, cut):
 	ops = {'>': operator.gt,
@@ -149,6 +149,8 @@ class Day():
 	
 	def get_shifts(self, season: str, day: int) -> Dict[str, int]:
 		"""get the shifts required for this day"""
+		if self.date_info.day in holidays['dates']:
+			return holidays['shift_info'].copy()
 
 		#I hate this, but I also hate the idea of numerical keys though im  not sure if this monstrosity justifies 
 		#not using them. 
