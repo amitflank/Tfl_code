@@ -1,7 +1,6 @@
-
+"""Introducing basic example where we might use classes and how we can use them to create our own custom types"""
 import string
 from typing import List
-
 import pytest
 
 class Contact():
