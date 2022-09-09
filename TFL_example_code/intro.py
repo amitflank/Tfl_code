@@ -56,7 +56,7 @@ for letter in word:
         break
 
 
-ras
+
 # check if all values in a list are greater then 10
 my_list = [1,30, 288, 20, 11]
 
@@ -81,9 +81,19 @@ while (sum_num <= 100):
 
 print(sum_num)
 
-
 num = -6
 
+if num < 0:
+    abs_num = num * -1
+else:
+    abs_num = num
+
+print("the absolute value of {0} is {1}".format(num, abs_num))
+
+#swap 2 numbers
+a = 20
+b= 10
+c = b
 if num < 0:
     abs_num = num * -1
 else:
