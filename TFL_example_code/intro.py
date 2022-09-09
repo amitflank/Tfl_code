@@ -12,6 +12,7 @@ from random import randint
 # get the absolute value of a number
 # swap the values of 2 variables
 # raise one number to the power of another number
+#bonus project see if you can re_write all these as methods.
 
 # check if all values in a list are greater then 10
 # print if number is even or odd
@@ -34,7 +35,7 @@ for val in num_list:
 word = ""
 if num % 3 == 0:
     word += "fizz"
-if num % 5 == 0:# loop until we randomly generate a number greater than 100
+if num % 5 == 0:
     word += "buzz"
 print(word)
 
@@ -54,8 +55,6 @@ for letter in word:
     end = end - 1
     if start >= end:
         break
-
-
 
 # check if all values in a list are greater then 10
 my_list = [1,30, 288, 20, 11]
@@ -94,22 +93,9 @@ print("the absolute value of {0} is {1}".format(num, abs_num))
 a = 20
 b= 10
 c = b
-if num < 0:
-    abs_num = num * -1
-else:
-    abs_num = num
-
-print("the absolute value of {0} is {1}".format(num, abs_num))
-
-#swap 2 numbers
-a = 20
-b= 10
-c = b
 b = a
 a = c
 print(a,b)
-
-
 
 # raise one number to the power of another number
 val = 2
