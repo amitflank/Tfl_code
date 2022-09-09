@@ -14,7 +14,7 @@ from random import randint
 # raise one number to the power of another number
 #bonus project see if you can re_write all these as methods.
 
-# check if all values in a list are greater then 10
+
 # print if number is even or odd
 # % modulo operator, returns the remained of a number
 num = 20
@@ -72,7 +72,6 @@ else:
 
 
 # loop until we randomly generate a number greater than 100
-
 sum_num = 0
 
 while (sum_num <= 100):
@@ -80,6 +79,7 @@ while (sum_num <= 100):
 
 print(sum_num)
 
+#get absolute value
 num = -6
 
 if num < 0:
