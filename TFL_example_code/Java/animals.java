@@ -1,7 +1,10 @@
 //Import a library to get access to additional useful methods and classes
 import java.util.ArrayList;
 import java.util.Random;
+import java.util.Optional;
+import java.lang.Math;
 import java.lang.IllegalArgumentException;
+
 
 class Food {
 	String foodType;
@@ -84,6 +87,10 @@ abstract class Animal{
 		this.maxMove = maxMove;
 	}
 
+	public boolean isAlive(){
+		return isAlive;
+	}
+
 	/**reduce animal calories based on distance traveled and kill it if calories are <= 0 post move **/
 	public void move(int dist){
 		this.calVal -= dist *this.moveCost;
@@ -113,11 +120,6 @@ class Herbivore extends Animal{
 
 	public Herbivore (int calVal, int moveCost,int meatVal) {
 		super(moveCost, calVal);
-		this.meatVal = meatVal;
-	}
-
-	public Herbivore (int calVal, int moveCost, int max_move, int meatVal) {
-		super(moveCost, calVal, max_move);
 		this.meatVal = meatVal;
 	}
 
@@ -155,17 +157,26 @@ class Carnivore extends Animal {
 
 class Tile {
 	ArrayList<Animal> contains = new ArrayList<Animal>();
-	int growthMul;
+	int growthRate;
+	Plant plant;
 
-	public Tile(int growthMul){
-		Random rand = new Random();
-		this.growthMul = rand.nextInt(10);
-
-		this.growthMul = growthMul;
+	public Tile(int growthRate){
+		Random rand = new Random(System.currentTimeMillis());
+		this.growthRate = rand.nextInt(10);
+		this.growthRate = growthRate;
+		plant = new Plant(growthRate);
 	}
 
 	public void addAnimal(Animal animal){
 		this.contains.add(animal);
+	}
+
+	public static boolean isHerb(Object obj){
+		return "Herbivore".equals(obj.getClass().getName());
+	}
+
+	public static boolean isCarni(Object obj){
+		return "Carnivore".equals(obj.getClass().getName());
 	}
 
 	public int[] get_num_by_type_animals() throws IllegalArgumentException{
@@ -174,15 +185,11 @@ class Tile {
 		int herb = 0;
 		int carni =0;
 
-		String herbStr = "Herbivore";
-		String CarniStr = "Carnivore";
-
-
 		for(int i = 0; i< animal_quant.length; i++){
-			if (herbStr.equals(this.contains.get(i).getClass().getName())) { //check if current animal is herbivore
+			if (Tile.isHerb(contains.get(i))) { //check if current animal is herbivore
 				herb += 1;
 			}
-			else if (CarniStr.equals(this.contains.get(i).getClass().getName())) {
+			else if (Tile.isCarni(contains.get(i))) {
 				carni += 1;
 			}
 			else {
@@ -194,5 +201,301 @@ class Tile {
 		animal_quant[1] = carni;
 		return animal_quant;
 		
+		}
 	}
-}
+	class IntDict {
+		public String key;
+		public int value;
+	}
+
+	class Board{
+
+
+		private int boardDim[] = new int[2];
+		private IntDict herbProp[] = new IntDict[4];
+		private IntDict carniProp[] = new IntDict[3];
+		private int corpseCount = 0;
+
+		private Tile[][] grid;
+
+		public Board(int boardDim[], int herbProp[], int carniProp[], int growthMul){
+			this.boardDim[0] = boardDim[0];
+			this.boardDim[1] = boardDim[1];
+
+			assignPropKeys();
+
+			//assign prop values for herbivores and carnivores
+			for (int i = 0; i < herbProp.length; i ++) this.herbProp[i].value = herbProp[i];
+			for (int i = 0; i < carniProp.length; i ++) this.carniProp[i].value = carniProp[i];
+
+
+			this.grid = new Tile[boardDim[0]][boardDim[1]]; //assign board dimensions
+			create_board(growthMul);
+			addAnimals();
+
+		}
+
+		private void addAnimals(){
+			Random rand = new Random(System.currentTimeMillis());
+
+			for(int i = 0; i < herbProp[0].value; i++){
+				int row = rand.nextInt(getHeight());
+				int col = rand.nextInt(getWidth());
+
+				Herbivore myHerb = new Herbivore(herbProp[1].value, herbProp[2].value, herbProp[3].value);
+				grid[row][col].addAnimal(myHerb);
+			}
+
+
+			for(int i = 0; i < herbProp[0].value; i++){
+				int row = rand.nextInt(getHeight());
+				int col = rand.nextInt(getWidth());
+
+				Carnivore myCarni= new Carnivore(carniProp[1].value, carniProp[2].value);
+				grid[row][col].addAnimal(myCarni);
+			}
+
+		}
+		private void create_board(int growthMul) {
+			for(int i = 0; i < getHeight(); i++) {
+				for (int j = 0; j < getWidth(); j++){
+					this.grid[i][j] = new Tile(growthMul);
+				}
+			}
+		}
+
+		private void assignPropKeys() {
+			//assigns herbivore keys
+			this.herbProp[0].key = "numHerb";
+			this.herbProp[1].key = "calVal";
+			this.herbProp[2].key = "meatVal";
+			this.herbProp[3].key = "moveCost";
+
+			//assign carnivore keys
+			this.carniProp[0].key = "numCarni";
+			this.carniProp[1].key = "calVal";
+			this.carniProp[2].key = "moveCost";
+
+		}
+
+		public int getHeight(){
+			return this.boardDim[0];
+		}
+
+		public int getWidth(){
+			return this.boardDim[1];
+		}
+
+		public int[] getRemainingAnimals() {
+			int totalHerb = 0, totalCarni = 0;
+
+			for (int i = 0; i < getHeight(); i ++){
+				for (int j = 0; j < getWidth(); j++){
+					int rAni[] = grid[i][j].get_num_by_type_animals();
+					totalHerb += rAni[0];
+					totalCarni += rAni[1];
+				}
+			}
+			return new int[]{totalHerb, totalCarni};
+		}
+
+		/**remove dead animals from out game and increase corpse count for each removed animal**/
+		private void cleanCorpses(Tile tile){
+			int removed_animals = 0;
+			ArrayList<Animal>  animals = tile.contains;
+
+			for (int i = 0; i < animals.size(); i++){
+				if (!animals.get(i).isAlive()){
+					animals.remove(i);
+					removed_animals++;
+					i--; 
+				}
+			}
+			corpseCount += removed_animals;
+		}
+
+		/**
+		 * Find the first living herbivore in the list if it exists.
+		 * @return Herbivore is it exists, otherwise null
+		 */
+		private  Optional<Herbivore> getFirstHerbivore(ArrayList<Animal>  animals){
+			for (int i = 0; i < animals.size(); i++){
+				if (Tile.isHerb(animals.get(i)) && animals.get(i).isAlive()){
+					return Optional.ofNullable((Herbivore) animals.get(i));
+				}
+			}
+			return Optional.empty();
+		}
+
+		/**Have all animals in passed animals list try and eat as specified by their animal type.
+		 * Tile is used to extract plant for herbivores.
+        Removes any dead animals from game after feeding is complete**/
+		private void feedAnimals(ArrayList<Animal> animals, Tile tile) {
+			for (int i = 0; i < animals.size(); i++){
+				if (Tile.isHerb(animals.get(i)) && animals.get(i).isAlive()){
+					((Herbivore) animals.get(i)).eat(tile.plant); //Our if statement means we know this is a Herbivore so legal
+				}
+				else{
+					Optional<Herbivore> bambi = getFirstHerbivore(animals);
+
+					if (bambi.isPresent()) {
+						((Carnivore) animals.get(i)).eat(bambi.get().getEaten());
+					}
+				}
+			}
+			cleanCorpses(tile);
+		}
+
+		public boolean coinFlip(){
+			Random rand = new Random(System.currentTimeMillis());
+			return rand.nextInt(100) < 50; 
+		}
+
+		/** Have passed animal move some legal random distance b/w 0 and it's max distance.
+			x_cord and y_cord represent animals current location used to help validate legality of animal movement.
+			Returns tuple of x_dist, y_dist, total_distance to help with unit testing*/
+		public int[] move_animal(Animal animal, int x_cord, int y_cord){
+			Random rand = new Random(System.currentTimeMillis());
+			
+			int max_move = animal.maxMove + 1; //want max move included as option
+			int distance = rand.nextInt(max_move); 
+			int x_dist = rand.nextInt(getWidth());
+
+			if (coinFlip())
+				x_dist *= -1;
+
+			int abs_y_dist = distance - Math.abs(x_dist);
+			int y_dist = abs_y_dist;
+
+			if (coinFlip()) 
+				y_dist *= -1;
+		   
+			
+			x_dist = validate_move(x_dist, x_cord, getWidth());
+			y_dist = validate_move(y_dist, y_cord, getHeight());
+	
+			return new int[]{x_dist, y_dist, distance};
+	
+		}
+
+		
+		/** Move all animals on tile x_cord, y_cord, some random distance. 
+			returns list of tuple for x distance traveled, y distance traveled and total distance traveled for testing*/
+		public ArrayList<int[]> moveAllAnimalsOnTile(ArrayList<Animal> animals, int x_cord, int y_cord){
+
+			ArrayList<int[]> distances = new ArrayList<int[]>();
+			
+			for (int i = 0; i < animals.size(); i++){
+				if (!animals.get(i).hasMoved){
+					int[] values = move_animal(animals.get(i), x_cord, y_cord);
+					int x_dist = values[0], y_dist = values[1], distance = values[2];
+					animals.get(i).move(distance);
+
+					if (distance != 0){
+						
+						grid[y_cord + y_dist][x_cord +x_dist].addAnimal(animals.get(i));
+						animals.remove(i);
+						cleanCorpses(grid[y_cord + y_dist][x_cord +x_dist]);
+						i--;
+					}
+					distances.add(new int[]{x_dist, y_dist, distance});
+				}
+			} 
+			return distances;
+		}
+
+		/** Check if move is valid if not flip direction of move otherwise do nothing*/
+		private int validate_move(int move_dist, int cur_pos, int max_val) {
+			if (cur_pos + move_dist >= max_val || cur_pos + move_dist <0)
+				return -move_dist;
+			return move_dist;
+		}
+
+		/**reset movement properties of animals so that can legally move on next day */
+		private void reset_animal_movement(){
+			for (int row = 0; row < getHeight(); row++){
+				for (int col = 0; col < getWidth(); col++){
+					ArrayList<Animal> animals = grid[row][col].contains;
+
+					for(int i = 0; i < animals.size(); i++){
+						animals.get(i).resetMove();
+					}
+				}
+			}
+		}
+
+		/**loop over all tiles, have all plants on all tiles grow, have all animals try and eat as specified by animal type then
+        move all animals some legal random distance b/w 0 and max_movement*/
+		public void cycle_day(){
+			Random rand = new Random(System.currentTimeMillis());
+
+			for (int row = 0; row < getHeight(); row++){
+				for (int col = 0; col < getWidth(); col++){
+					Tile curTile = grid[row][col];
+					int growthRate = rand.nextInt(5) + 1; //Want to exclude 0 
+					curTile.plant.grow(growthRate);
+
+					feedAnimals(curTile.contains, curTile);
+					
+					//We can't actually eat after movement b/c we can move in any direction so some animals may miss feeding time if we do
+					//we would need to loop again. This is allowed but an interesting design decision. I like keeping my O(n) low so I'll flip it.
+					moveAllAnimalsOnTile(curTile.contains, row, col);
+
+				}
+			}
+
+		}
+	} 
+	/*class Board():
+
+    """
+    Represents game board in which all of our activities will take place. 
+    Args:
+        board_dim {height: int, width: int}
+        herb_prop: {num_herb: int, cal_val: int, meat_val: int, move_cost: int}
+        carni_prop: {num_carni: int, cal_val: int, move_cost: int}
+        growth_mul: scaling factor for plant growth for all board tiles
+    """
+ 
+
+
+    def cycle_day(self):
+        """loop over all tiles, have all plants on all tiles grow, have all animals try and eat as specified by animal type then
+        move all animals some legal random distance b/w 0 and max_movement"""
+
+        for row in range(self.height):
+            for col in range(self.width): 
+                cur_tile = self.grid[row][col]
+                growth_rate = randint(1, 5) #generate random growth rate for this tile
+                cur_tile.plant.grow(growth_rate) #First grow out plants
+
+                self.feed_animals(cur_tile.contains, cur_tile)
+
+                #We can't actually eat after movement b/c we can move in any direction so some animals may miss feeding time if we do
+                #we would need to loop again. This is allowed but an intresting design decision. I like keeping my O(n) low so I'll flip it.
+                self.move_all_animals_on_tile(cur_tile.contains, row, col) 
+
+        self.reset_animal_movement() #make sure all our animals are allowed to move
+
+
+    def move_all_animals_on_tile(self, animals: List[Animal], x_cord: int, y_cord: int) -> List[Tuple[int, int, int]]:
+        """Move all animals on tile x_cord, y_cord, some random distance. 
+        returns list of tuple for x distance traveled, y distance traveled and total distance traveled for testing"""
+        animals_copy =  animals.copy() #shallow copy to prevent pass by reference errors in loop
+        distances = []
+        idx = 0
+
+        for animal in animals_copy:
+            if not animal.has_moved:
+                x_dist, y_dist, distance =  self.move_animal(animal, x_cord, y_cord)
+                animal.move(distance)ArrayList<Animal>
+                    self.grid[y_cord + y_dist][x_cord + x_dist].add_animal(animal)
+                    self.clean_corpses(self.grid[y_cord + y_dist][x_cord + x_dist].contains) #remove animals that starved
+        
+                distances.append((x_dist, y_dist, distance, idx))
+            idx += 1
+        return distances
+    
+
+ */
+
