@@ -480,9 +480,10 @@ class Tile {
 			int[] tmp = myBoard.getRemainingAnimals();
 			
 			int herbsLeft = tmp[0], carniLeft = tmp[1];
-			System.out.println(tmp);
+	
 			String out= String.format("After %d days we killed %d animals and have %d herbivores and %d carnivores left", 
 			days, myBoard.corpseCount, herbsLeft,carniLeft);
+			System.out.println(out)
 
  	       	myScan.close();
 		}
