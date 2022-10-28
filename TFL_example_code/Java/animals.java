@@ -1,9 +1,8 @@
 //Import a library to get access to additional useful methods and classes
-import java.util.ArrayList;
-import java.util.Random;
-import java.util.Optional;
+import java.util.*;
 import java.lang.Math;
 import java.lang.IllegalArgumentException;
+import java.lang.System;
 
 
 class Food {
@@ -186,20 +185,16 @@ class Tile {
 
 	public int[] get_num_by_type_animals() throws IllegalArgumentException{
 		int animal_quant[] = new int[2];
-
 		int herb = 0;
 		int carni =0;
 
 		for(int i = 0; i< animal_quant.length; i++){
-			if (Tile.isHerb(contains.get(i))) { //check if current animal is herbivore
+			if (Tile.isHerb(contains.get(i))) //check if current animal is herbivore
 				herb += 1;
-			}
-			else if (Tile.isCarni(contains.get(i))) {
+			else if (Tile.isCarni(contains.get(i))) 
 				carni += 1;
-			}
-			else {
+			else 
 				throw new IllegalArgumentException("Found illegal non-animal in Tile contains");
-			}
 		}
 
 		animal_quant[0] = herb;
@@ -208,19 +203,13 @@ class Tile {
 		
 		}
 	}
-	class IntDict {
-		public String key;
-		public int value;
-	}
 
 	/** Represents game board in which all of our activities will take place. */
 	class Board{
-
-
 		private int boardDim[] = new int[2];
-		private IntDict herbProp[] = new IntDict[4];
-		private IntDict carniProp[] = new IntDict[3];
-		private int corpseCount = 0;
+		private int herbProp[] = new int[4];
+		private int carniProp[] = new int[3];
+		public int corpseCount = 0;
 
 		private Tile[][] grid;
 
@@ -228,39 +217,33 @@ class Tile {
 			this.boardDim[0] = boardDim[0];
 			this.boardDim[1] = boardDim[1];
 
-			assignPropKeys();
-
 			//assign prop values for herbivores and carnivores
-			for (int i = 0; i < herbProp.length; i ++) this.herbProp[i].value = herbProp[i];
-			for (int i = 0; i < carniProp.length; i ++) this.carniProp[i].value = carniProp[i];
-
+			for (int i = 0; i < herbProp.length; i ++) this.herbProp[i] = herbProp[i];
+			for (int i = 0; i < carniProp.length; i ++) this.carniProp[i]= carniProp[i];
 
 			this.grid = new Tile[boardDim[0]][boardDim[1]]; //assign board dimensions
 			create_board(growthMul);
 			addAnimals();
-
 		}
 
 		private void addAnimals(){
 			Random rand = new Random(System.currentTimeMillis());
 
-			for(int i = 0; i < herbProp[0].value; i++){
+			for(int i = 0; i < herbProp[0]; i++){
 				int row = rand.nextInt(getHeight());
 				int col = rand.nextInt(getWidth());
 
-				Herbivore myHerb = new Herbivore(herbProp[1].value, herbProp[2].value, herbProp[3].value);
+				Herbivore myHerb = new Herbivore(herbProp[1], herbProp[2], herbProp[3]);
 				grid[row][col].addAnimal(myHerb);
 			}
 
-
-			for(int i = 0; i < herbProp[0].value; i++){
+			for(int i = 0; i < herbProp[0]; i++){
 				int row = rand.nextInt(getHeight());
 				int col = rand.nextInt(getWidth());
 
-				Carnivore myCarni= new Carnivore(carniProp[1].value, carniProp[2].value);
+				Carnivore myCarni= new Carnivore(carniProp[1], carniProp[2]);
 				grid[row][col].addAnimal(myCarni);
 			}
-
 		}
 		private void create_board(int growthMul) {
 			for(int i = 0; i < getHeight(); i++) {
@@ -268,20 +251,6 @@ class Tile {
 					this.grid[i][j] = new Tile(growthMul);
 				}
 			}
-		}
-
-		private void assignPropKeys() {
-			//assigns herbivore keys
-			this.herbProp[0].key = "numHerb";
-			this.herbProp[1].key = "calVal";
-			this.herbProp[2].key = "meatVal";
-			this.herbProp[3].key = "moveCost";
-
-			//assign carnivore keys
-			this.carniProp[0].key = "numCarni";
-			this.carniProp[1].key = "calVal";
-			this.carniProp[2].key = "moveCost";
-
 		}
 
 		public int getHeight(){
@@ -384,7 +353,6 @@ class Tile {
 	
 		}
 
-		
 		/** Move all animals on tile x_cord, y_cord, some random distance. 
 			returns list of tuple for x distance traveled, y distance traveled and total distance traveled for testing*/
 		public ArrayList<int[]> moveAllAnimalsOnTile(ArrayList<Animal> animals, int x_cord, int y_cord){
@@ -446,10 +414,67 @@ class Tile {
 					//We can't actually eat after movement b/c we can move in any direction so some animals may miss feeding time if we do
 					//we would need to loop again. This is allowed but an interesting design decision. I like keeping my O(n) low so I'll flip it.
 					moveAllAnimalsOnTile(curTile.contains, row, col);
-
 				}
 			}
 			reset_animal_movement();
-
 		}
 	} 
+
+	/**Main method for this game. asks user for starting conditions, runs simulation and reports results */
+	class PlayGame{
+		public static void main(String[] args) {
+
+			Scanner myScan = new Scanner(System.in);
+			System.out.println("please enter a board height: ");
+			int height = Integer.parseInt(myScan.next()); // We wont worry about error handling
+
+			System.out.println("please enter a board width: ");
+			int width = Integer.parseInt(myScan.next()); 
+
+			System.out.println("please enter how many herbivores you would like: ");
+			int numHerb = Integer.parseInt(myScan.next());
+			
+			System.out.println("please enter how many calories herbivores should start with: ");
+			int herbCal = Integer.parseInt(myScan.next());
+
+			System.out.println("please enter how many calories it takes a herbivore to move: ");
+			int herbMove = Integer.parseInt(myScan.next());
+
+			System.out.println("please enter how many calories consuming a herbivore provides: ");
+			int herbMeatVal = Integer.parseInt(myScan.next());
+
+			System.out.println("please enter how many carnivores you would like: ");
+			int numCarni = Integer.parseInt(myScan.next());
+
+			System.out.println("please enter how many calories it takes a herbivore to move: ");
+			int carniCal = Integer.parseInt(myScan.next());
+
+			System.out.println("please enter how many calories it takes a carnivore to move: ");
+			int carniMove = Integer.parseInt(myScan.next());
+
+			System.out.println("please enter a number of days to run: ");
+			int days = Integer.parseInt(myScan.next());
+
+			System.out.println("please enter scaling value for plant growth rate: ");
+			int growthMul = Integer.parseInt(myScan.next());
+
+			
+
+			int boardDim[] = new int[]{height, width};
+			int herbProp[] = new int[]{numHerb, herbCal, herbMove, herbMeatVal};
+			int carniProp[] = new int[]{numCarni, carniCal, carniMove};
+
+			Board myBoard = new Board(boardDim, herbProp, carniProp, growthMul);
+			for (int i = 0; i < days; i++){
+				myBoard.cycle_day();
+			}
+
+			int[] tmp = myBoard.getRemainingAnimals();
+			int herbsLeft = tmp[0], carniLeft = tmp[1];
+			System.out.println("After " + days + "days we killed " + myBoard.corpseCount + 
+			 "animals and have " + numHerb + "herbivores and " + numCarni + "carnivores left");
+
+ 	       	myScan.close();
+
+		}
+	}
