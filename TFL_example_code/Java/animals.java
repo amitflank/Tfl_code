@@ -123,6 +123,11 @@ class Herbivore extends Animal{
 		this.meatVal = meatVal;
 	}
 
+	public Herbivore (int calVal, int moveCost, int max_move, int meatVal) {
+		super(moveCost, calVal, max_move);
+		this.meatVal = meatVal;
+	}
+
 	public void eat (Plant plant){
 		this.calVal += plant.grazed();
 	}
@@ -208,6 +213,7 @@ class Tile {
 		public int value;
 	}
 
+	/** Represents game board in which all of our activities will take place. */
 	class Board{
 
 
@@ -443,59 +449,7 @@ class Tile {
 
 				}
 			}
+			reset_animal_movement();
 
 		}
 	} 
-	/*class Board():
-
-    """
-    Represents game board in which all of our activities will take place. 
-    Args:
-        board_dim {height: int, width: int}
-        herb_prop: {num_herb: int, cal_val: int, meat_val: int, move_cost: int}
-        carni_prop: {num_carni: int, cal_val: int, move_cost: int}
-        growth_mul: scaling factor for plant growth for all board tiles
-    """
- 
-
-
-    def cycle_day(self):
-        """loop over all tiles, have all plants on all tiles grow, have all animals try and eat as specified by animal type then
-        move all animals some legal random distance b/w 0 and max_movement"""
-
-        for row in range(self.height):
-            for col in range(self.width): 
-                cur_tile = self.grid[row][col]
-                growth_rate = randint(1, 5) #generate random growth rate for this tile
-                cur_tile.plant.grow(growth_rate) #First grow out plants
-
-                self.feed_animals(cur_tile.contains, cur_tile)
-
-                #We can't actually eat after movement b/c we can move in any direction so some animals may miss feeding time if we do
-                #we would need to loop again. This is allowed but an intresting design decision. I like keeping my O(n) low so I'll flip it.
-                self.move_all_animals_on_tile(cur_tile.contains, row, col) 
-
-        self.reset_animal_movement() #make sure all our animals are allowed to move
-
-
-    def move_all_animals_on_tile(self, animals: List[Animal], x_cord: int, y_cord: int) -> List[Tuple[int, int, int]]:
-        """Move all animals on tile x_cord, y_cord, some random distance. 
-        returns list of tuple for x distance traveled, y distance traveled and total distance traveled for testing"""
-        animals_copy =  animals.copy() #shallow copy to prevent pass by reference errors in loop
-        distances = []
-        idx = 0
-
-        for animal in animals_copy:
-            if not animal.has_moved:
-                x_dist, y_dist, distance =  self.move_animal(animal, x_cord, y_cord)
-                animal.move(distance)ArrayList<Animal>
-                    self.grid[y_cord + y_dist][x_cord + x_dist].add_animal(animal)
-                    self.clean_corpses(self.grid[y_cord + y_dist][x_cord + x_dist].contains) #remove animals that starved
-        
-                distances.append((x_dist, y_dist, distance, idx))
-            idx += 1
-        return distances
-    
-
- */
-
