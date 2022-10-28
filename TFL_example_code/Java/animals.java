@@ -188,7 +188,7 @@ class Tile {
 		int herb = 0;
 		int carni =0;
 
-		for(int i = 0; i< animal_quant.length; i++){
+		for(int i = 0; i< contains.size(); i++){
 			if (Tile.isHerb(contains.get(i))) //check if current animal is herbivore
 				herb += 1;
 			else if (Tile.isCarni(contains.get(i))) 
@@ -206,6 +206,7 @@ class Tile {
 
 	/** Represents game board in which all of our activities will take place. */
 	class Board{
+		private int minBoardSize = 6;
 		private int boardDim[] = new int[2];
 		private int herbProp[] = new int[4];
 		private int carniProp[] = new int[3];
@@ -216,6 +217,11 @@ class Tile {
 		public Board(int boardDim[], int herbProp[], int carniProp[], int growthMul){
 			this.boardDim[0] = boardDim[0];
 			this.boardDim[1] = boardDim[1];
+
+			if (this.boardDim[0] < minBoardSize)
+				boardDim[0] = minBoardSize;
+			if (this.boardDim[1] < minBoardSize)
+				boardDim[1] = minBoardSize;
 
 			//assign prop values for herbivores and carnivores
 			for (int i = 0; i < herbProp.length; i ++) this.herbProp[i] = herbProp[i];
@@ -334,7 +340,7 @@ class Tile {
 			
 			int max_move = animal.maxMove + 1; //want max move included as option
 			int distance = rand.nextInt(max_move); 
-			int x_dist = rand.nextInt(getWidth());
+			int x_dist = rand.nextInt(distance + 1);
 
 			if (coinFlip())
 				x_dist *= -1;
@@ -366,7 +372,7 @@ class Tile {
 					animals.get(i).move(distance);
 
 					if (distance != 0){
-						
+
 						grid[y_cord + y_dist][x_cord +x_dist].addAnimal(animals.get(i));
 						animals.remove(i);
 						cleanCorpses(grid[y_cord + y_dist][x_cord +x_dist]);
@@ -423,7 +429,6 @@ class Tile {
 	/**Main method for this game. asks user for starting conditions, runs simulation and reports results */
 	class PlayGame{
 		public static void main(String[] args) {
-
 			Scanner myScan = new Scanner(System.in);
 			System.out.println("please enter a board height: ");
 			int height = Integer.parseInt(myScan.next()); // We wont worry about error handling
@@ -464,17 +469,17 @@ class Tile {
 			int herbProp[] = new int[]{numHerb, herbCal, herbMove, herbMeatVal};
 			int carniProp[] = new int[]{numCarni, carniCal, carniMove};
 
+
 			Board myBoard = new Board(boardDim, herbProp, carniProp, growthMul);
-			for (int i = 0; i < days; i++){
+			for (int i = 0; i < 10; i++){
 				myBoard.cycle_day();
 			}
 
 			int[] tmp = myBoard.getRemainingAnimals();
 			int herbsLeft = tmp[0], carniLeft = tmp[1];
-			System.out.println("After " + days + "days we killed " + myBoard.corpseCount + 
-			 "animals and have " + numHerb + "herbivores and " + numCarni + "carnivores left");
+			System.out.println("After " + days + " days we killed " + myBoard.corpseCount + 
+			 "animals and have " + herbsLeft + " herbivores and " + carniLeft + " carnivores left");
 
  	       	myScan.close();
-
 		}
 	}
