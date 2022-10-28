@@ -72,7 +72,6 @@ else:
 
 
 # loop until we randomly generate a number greater than 100
-
 sum_num = 0
 
 while (sum_num <= 100):
@@ -80,6 +79,7 @@ while (sum_num <= 100):
 
 print(sum_num)
 
+#get absolute value
 num = -6
 
 if num < 0:

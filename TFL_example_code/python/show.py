@@ -29,16 +29,3 @@ class Cow():
 
 
 
-#topics loops, types, lists, conditionals, operators
-
-
-#print even if number is even, otherwise print odd, repeat with list of numbers
-#print fizz if divisible by 3, buzz if divisible by 5 and fizzbuzz if divisible by both
-#check if a string is a palindrome
-#check is a list is a palindrome 
-#check if all values in a list are greater then 10
-#loop until we randomly generate a number greater than 100
-#get the absolute value of a number
-#add next number to cumulative value if would not result in the new number being greater than 50
-#swap the values of 2 variables
-#raise one number to the power of another number
