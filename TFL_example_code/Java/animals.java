@@ -483,7 +483,7 @@ class Tile {
 	
 			String out= String.format("After %d days we killed %d animals and have %d herbivores and %d carnivores left", 
 			days, myBoard.corpseCount, herbsLeft,carniLeft);
-			System.out.println(out)
+			System.out.println(out);
 
  	       	myScan.close();
 		}
