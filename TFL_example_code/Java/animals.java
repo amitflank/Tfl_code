@@ -219,9 +219,9 @@ class Tile {
 			this.boardDim[1] = boardDim[1];
 
 			if (this.boardDim[0] < minBoardSize)
-				boardDim[0] = minBoardSize;
+				this.boardDim[0] = minBoardSize;
 			if (this.boardDim[1] < minBoardSize)
-				boardDim[1] = minBoardSize;
+				this.boardDim[1] = minBoardSize;
 
 			//assign prop values for herbivores and carnivores
 			for (int i = 0; i < herbProp.length; i ++) this.herbProp[i] = herbProp[i];
@@ -243,7 +243,7 @@ class Tile {
 				grid[row][col].addAnimal(myHerb);
 			}
 
-			for(int i = 0; i < herbProp[0]; i++){
+			for(int i = 0; i < carniProp[0]; i++){
 				int row = rand.nextInt(getHeight());
 				int col = rand.nextInt(getWidth());
 
@@ -313,7 +313,9 @@ class Tile {
         Removes any dead animals from game after feeding is complete**/
 		private void feedAnimals(ArrayList<Animal> animals, Tile tile) {
 			for (int i = 0; i < animals.size(); i++){
-				if (Tile.isHerb(animals.get(i)) && animals.get(i).isAlive()){
+				if (Tile.isHerb(animals.get(i))){
+					
+					if (animals.get(i).isAlive())
 					((Herbivore) animals.get(i)).eat(tile.plant); //Our if statement means we know this is a Herbivore so legal
 				}
 				else{
@@ -451,7 +453,7 @@ class Tile {
 			System.out.println("please enter how many carnivores you would like: ");
 			int numCarni = Integer.parseInt(myScan.next());
 
-			System.out.println("please enter how many calories it takes a herbivore to move: ");
+			System.out.println("please enter how many calories carnivore should start with:");
 			int carniCal = Integer.parseInt(myScan.next());
 
 			System.out.println("please enter how many calories it takes a carnivore to move: ");
@@ -476,9 +478,11 @@ class Tile {
 			}
 
 			int[] tmp = myBoard.getRemainingAnimals();
+			
 			int herbsLeft = tmp[0], carniLeft = tmp[1];
-			System.out.println("After " + days + " days we killed " + myBoard.corpseCount + 
-			 "animals and have " + herbsLeft + " herbivores and " + carniLeft + " carnivores left");
+			System.out.println(tmp);
+			String out= String.format("After %d days we killed %d animals and have %d herbivores and %d carnivores left", 
+			days, myBoard.corpseCount, herbsLeft,carniLeft);
 
  	       	myScan.close();
 		}
