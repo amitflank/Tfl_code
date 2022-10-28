@@ -227,7 +227,7 @@ class Tile {
 			for (int i = 0; i < herbProp.length; i ++) this.herbProp[i] = herbProp[i];
 			for (int i = 0; i < carniProp.length; i ++) this.carniProp[i]= carniProp[i];
 
-			this.grid = new Tile[boardDim[0]][boardDim[1]]; //assign board dimensions
+			this.grid = new Tile[this.boardDim[0]][this.boardDim[1]]; //assign board dimensions
 			create_board(growthMul);
 			addAnimals();
 		}
@@ -465,8 +465,6 @@ class Tile {
 			System.out.println("please enter scaling value for plant growth rate: ");
 			int growthMul = Integer.parseInt(myScan.next());
 
-			
-
 			int boardDim[] = new int[]{height, width};
 			int herbProp[] = new int[]{numHerb, herbCal, herbMove, herbMeatVal};
 			int carniProp[] = new int[]{numCarni, carniCal, carniMove};
@@ -478,7 +476,6 @@ class Tile {
 			}
 
 			int[] tmp = myBoard.getRemainingAnimals();
-			
 			int herbsLeft = tmp[0], carniLeft = tmp[1];
 	
 			String out= String.format("After %d days we killed %d animals and have %d herbivores and %d carnivores left", 
