@@ -471,7 +471,7 @@ class Tile {
 
 
 			Board myBoard = new Board(boardDim, herbProp, carniProp, growthMul);
-			for (int i = 0; i < 10; i++){
+			for (int i = 0; i < days; i++){
 				myBoard.cycle_day();
 			}
 
