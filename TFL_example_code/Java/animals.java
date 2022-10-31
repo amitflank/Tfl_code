@@ -112,8 +112,8 @@ abstract class Animal{
 class Herbivore extends Animal{
 	int meatVal;
 
-	public Herbivore(int calVal, int meatVal){
-		super(calVal);
+	public Herbivore(int moveCost, int meatVal){
+		super(moveCost);
 		this.meatVal = meatVal;
 	}
 
@@ -142,8 +142,8 @@ class Herbivore extends Animal{
  **/ 
 class Carnivore extends Animal {
 
-	public Carnivore (int calVal) {
-		super(calVal);
+	public Carnivore (int moveCost) {
+		super(moveCost);
 	}
 
 	public Carnivore (int calVal, int moveCost) {
