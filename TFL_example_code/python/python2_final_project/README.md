@@ -12,7 +12,7 @@ This command would ask the scheduler to generate a schedule for august 2022, wit
 It would then create a file called August.csv.
 
 
-#Assignment Goals
+# Assignment Goals
 
 The goal of this assignment is for students to complete the scheduler. Some of the code has already been provided as well as the overall structure via pythons type hinting mechanic. Students should fill in the necessary methods. The spread_gen and mentor_db files have been provided to help students generate a csv file using the scheduler once it is complete. The oct_sched.csv file contains the expected schedule output of the given db file so students can check their work. 
 
