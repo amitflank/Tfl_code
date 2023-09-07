@@ -1,0 +1,32 @@
+date,a_shift,b_shift,c_shift,backup,Mentor,Pay1 hours,Pay2 hours,Hours Wanted per pay period,hard dates
+1 Sunday,Ella,Levi (one Sat C shift),Sam,,Asher,32,28,40,"[1, 2, 5, 7, 8, 9, 12, 14, 15, 16, 19, 21, 22, 23, 26, 28, 29, 30]"
+2 Monday,Jonah,Mitch,Ella,,Avree,36,38,48,"[1, 2, 5, 7, 8, 9, 12, 14, 15, 16, 19, 21, 22, 23, 26, 28, 29, 30]"
+3 Tuesday,Avree,Asher,Devon (one Sat C shift),,Devon (one Sat C shift),20,26,36,"[1, 2, 5, 7, 8, 9, 12, 14, 15, 16, 19, 21, 22, 23, 26, 28, 29, 30]"
+4 Wednesday,Avree,Asher,,,Ella,39,41,48,"[4, 7, 11, 14, 18, 21, 25, 28]"
+5 Thursday,Jonah,Mitch,Levi (one Sat C shift),,Jonah,35,37,48,"[1, 8, 15, 22, 29]"
+6 Friday,Avree,Asher,Devon (one Sat C shift),,Levi (one Sat C shift),37,37,48,"[7, 14, 21, 28]"
+7 Saturday,Roxy,Jonah,Mitch,Not assigned,Mitch,34,32,40,"[1, 4, 8, 11, 15, 18, 22, 25, 29]"
+8 Sunday,Ella,Levi (one Sat C shift),Roxy,,Roxy,39,39,48,"[2, 5, 9, 12, 16, 19, 23, 26, 30]"
+9 Monday,Ella,Jonah,Sam,,Sam,27,29,38,"[7, 14, 21, 28]"
+10 Tuesday,Avree,Devon (one Sat C shift),Asher
+11 Wednesday,Avree,Devon (one Sat C shift)
+12 Thursday,Levi (one Sat C shift),Mitch,Sam
+13 Friday,Roxy,Asher,Avree
+14 Saturday,Mitch,Roxy,Jonah,Not assigned
+15 Sunday,Ella,Levi (one Sat C shift),Sam
+16 Monday,Ella,Jonah,Levi (one Sat C shift)
+17 Tuesday,Avree,Asher,Devon (one Sat C shift)
+18 Wednesday,Avree,Asher
+19 Thursday,Mitch,Sam,Ella
+20 Friday,Avree,Asher,Devon (one Sat C shift)
+21 Saturday,Roxy,Jonah,Mitch,Not assigned
+22 Sunday,Ella,Levi (one Sat C shift),Roxy
+23 Monday,Jonah,Levi (one Sat C shift),Ella
+24 Tuesday,Avree,Devon (one Sat C shift),Asher
+25 Wednesday,Avree,Devon (one Sat C shift)
+26 Thursday,Mitch,Sam,Jonah
+27 Friday,Roxy,Sam,Asher
+28 Saturday,Roxy,Mitch,Jonah,Not assigned
+29 Sunday,Ella,Levi (one Sat C shift),Sam
+30 Monday,Ella,Levi (one Sat C shift),Mitch
+31 Tuesday,Avree,Devon (one Sat C shift),Jonah
