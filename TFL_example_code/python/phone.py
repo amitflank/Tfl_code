@@ -9,6 +9,11 @@ class Contact():
         self.name = name
         self.number =  number
 
+
+    def format_text(self) -> str:
+        return f"Contact: {self.name}, Number: {self.number}"
+    
+
 class App():
 
     def __init__(self, name: str):
@@ -19,9 +24,12 @@ class Phone():
     def __init__(self, apps: List[App], number: str, contacts: List[Contact] = []):
         self.apps = apps 
         self.number = number
-        self.keys = self.create_alphabet()
+        self.keys = Phone.create_alphabet()
         self.contacts = contacts
         self.mode = 'idle'
+
+    def add_num(a :int, b: int) -> int:
+        return a +b
 
 
     def request_answer(self, phone) -> bool:
@@ -59,7 +67,7 @@ class Phone():
         #todo
         pass
 
-    def create_alphabet(self):
+    def create_alphabet():
         #create lower case alphabet list
         alphabet_string = string.ascii_lowercase
         alphabet_list_low = list(alphabet_string)
@@ -71,9 +79,14 @@ class Phone():
         #merge lists and return
         alphabet = alphabet_list_low + alphabet_list_cap
         return alphabet
+    
+ex = Phone.add_num(1,2)
 
 phone1 = Phone([], "1234", [Contact("Ben", "0000"), Contact("Jenny", "1111")])
-phone2 = Phone([], "0000")
+print(phone1.contacts[1].format_text())
+# phone1.create_alphabet()
+# Phone.create_alphabet()
+# phone2 = Phone([], "0000")
 
-assert not phone1.make_call(phone2)
-assert phone2.make_call(phone1)
+# assert not phone1.make_call(phone2)
+# assert phone2.make_call(phone1)

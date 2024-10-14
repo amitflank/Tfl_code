@@ -1,4 +1,4 @@
-"""FYI these are shallowly slopilly written tests. I wrote these very quickly to show the concept of unit testing.
+"""FYI these are shallowly written tests. I wrote these very quickly to show the concept of unit testing.
 DO NOT use this as exhaustive rubric for unit tests. I've added some limited commentary on how you could improve these tests in 
 the future and this might be a good example for learning about refactoring."""
 
@@ -183,8 +183,6 @@ def test_move_all_animals_on_tile():
             #Example of being to fancy for ones own good this is bad code. It is pretty dope though.
             #Gets a list of 1's and 0's representing animals index's for herbivores and carnivores  
 
-
-            #try using map here?
             #create lambda fxn assign to var then pass w/list to map
             #animal_index = [(lambda T: 0 if type(T) is Herbivore else 1)(animal) for animal in cur_tile_animals]
             

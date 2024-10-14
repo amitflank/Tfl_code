@@ -6,7 +6,7 @@ class Learning{
         Random rand = new Random(System.currentTimeMillis());
         int num = rand.nextInt(26);
 
-
+        int myVar = 10;
         Learning show = new Learning();
 
         //Example of calling a static method, notice we use class blueprint rather then an instance.
@@ -39,7 +39,7 @@ class Learning{
     public static boolean isPal(String playPal){
 
         boolean validPal = true;
-        int backIdx = playPal.length() - 1;
+        int backIdx = playPal.length() - 1;  
         for (int i=0; i < playPal.length(); i++, backIdx--){ // we can stack multiple operations in increment step
 
             //for single line if statements we don't need to include curly braces

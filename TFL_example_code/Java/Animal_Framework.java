@@ -217,6 +217,9 @@ class Tile {
 		//}
 
 		//private void addAnimals(){
+			//The First value of herbProp is the number of herbivores on the board
+			//The First value of carniProp is the number of carnivores on the board
+			//The Remaining values of herbProp and carniProp are the properties of the animals matching those in their respective classes
             //add appropriate number of herbivores and carnivores to our board as defined by 
             //herbProp and carniProp. 
             //properties of Herbivores and Carnivores should match those defined 
@@ -233,7 +236,7 @@ class Tile {
 		//}
 
 		//public int getWidth(){
-			//return height (number of columns) or out this Board instance. 
+			//return width (number of columns) or out this Board instance. 
 		//}
 
 		//public int[] getRemainingAnimals() {

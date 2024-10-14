@@ -1,6 +1,6 @@
 """
 This project represents a simple game theory assignment used to introduce concepts such as nested loops, classes and inheritance to new programers. 
-It involves creating a board with carnivores, herbivores and plants and observing how outcomes differ if we give each of these creatures diffrent starting 
+It involves creating a board with carnivores, herbivores and plants and observing how outcomes differ if we give each of these creatures different starting 
 properties. """
 
 from random import randint
@@ -47,7 +47,7 @@ class Meat(Food):
     Represents a food created on animal death can be consumed by carnivores.
 
     Args:
-        cal_Val: int that caloric value of consuming this meat"""
+        cal_val: int that caloric value of consuming this meat"""
     def __init__(self, cal_val:  int):
         super().__init__("Meat")
         self.cal_val: int = cal_val

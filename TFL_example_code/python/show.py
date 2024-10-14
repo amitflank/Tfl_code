@@ -27,5 +27,10 @@ class Cow():
             return Milk()
         print("sorry no mily for you")
 
-
-
+my_inp = input("enter a number: ")
+print(type(my_inp))
+print(my_inp)
+if my_inp == 1:
+    print("test")
+else:
+    print("didn't cast my string")

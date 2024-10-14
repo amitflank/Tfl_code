@@ -251,10 +251,10 @@ class Tile {
 				grid[row][col].addAnimal(myCarni);
 			}
 		}
-		private void create_board(int growthMul) {
+		private void create_board(int growthRate) {
 			for(int i = 0; i < getHeight(); i++) {
 				for (int j = 0; j < getWidth(); j++){
-					this.grid[i][j] = new Tile(growthMul);
+					this.grid[i][j] = new Tile(growthRate);
 				}
 			}
 		}
@@ -316,7 +316,7 @@ class Tile {
 				if (Tile.isHerb(animals.get(i))){
 					
 					if (animals.get(i).isAlive())
-					((Herbivore) animals.get(i)).eat(tile.plant); //Our if statement means we know this is a Herbivore so legal
+						((Herbivore) animals.get(i)).eat(tile.plant); //Our if statement means we know this is a Herbivore so legal
 				}
 				else{
 					Optional<Herbivore> bambi = getFirstHerbivore(animals);

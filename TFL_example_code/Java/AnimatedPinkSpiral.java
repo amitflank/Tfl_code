@@ -26,7 +26,8 @@ public class AnimatedPinkSpiral extends JPanel implements ActionListener {
         g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
 
         // Set the color to pink
-        g2d.setColor(Color.PINK);
+        g2d.setColor(Color.getHSBColor(0.9f, 0.8f, 0.9f));
+
 
         int width = getWidth();
         int height = getHeight();
@@ -40,16 +41,27 @@ public class AnimatedPinkSpiral extends JPanel implements ActionListener {
         double angle = angleOffset;  // The angle now moves over time
         double radius = 0;
 
+        int i = 0;
         // Draw the spiral
         while (angle < maxAngle + angleOffset) {
             double x = center.x + radius * Math.cos(angle);
             double y = center.y + radius * Math.sin(angle);
 
+            if (i % 3 == 0) {
+                g2d.setColor(Color.BLUE);
+            } 
+            else if (i % 3 == 1) {
+                g2d.setColor(Color.GREEN);
+            }
+            else {
+                g2d.setColor(Color.RED);
+            }
             g2d.fillOval((int) x, (int) y, 5, 5); // Draw small circles to form the spiral
 
             // Increment radius and angle to create the spiral effect
             angle += angleIncrement;
             radius += radiusIncrement;
+            i++;
         }
     }
 
