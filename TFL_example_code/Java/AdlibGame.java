@@ -33,11 +33,22 @@ public class AdlibGame {
                            "On a pirate ship", "In a candy factory", "Inside a video game", "At the zoo", "On top of a mountain"};
         String[] objects = {"Laser sword", "Magic wand", "Treasure chest", "Spacesuit", "Golden crown"};
 
+        System.out.println("Please enter a name hit enter if you want to use a random noun");
+        String name = scanner.nextLine();
+        String names[] = {name};
+
+        //Only runs if user enters a name
+        if (!name.isEmpty()) {
+            nouns = names;
+        }
+        
+
         System.out.println("How many sentences would you like to generate?");
         int sentenceCount = scanner.nextInt();
         Set<String> uniqueSentences = new HashSet<>();
 
         for (int i = 0; i < sentenceCount; i++) {
+            
             String newSentence = createRandomSentence(nouns, verbs, adjectives, places, objects);
             if (uniqueSentences.add(newSentence)) {
                 System.out.println(newSentence);
