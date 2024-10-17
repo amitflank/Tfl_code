@@ -40,6 +40,7 @@ public class AdlibGame {
         //Only runs if user enters a name
         if (!name.isEmpty()) {
             nouns = names;
+            tesr
         }
         
 
