@@ -39,8 +39,17 @@ public class AdlibGame {
 
         //Only runs if user enters a name
         if (!name.isEmpty()) {
-            nouns = names;
-            tesr
+
+            String name2 = scanner.nextLine();
+
+            if (!name2.isEmpty()) {
+                String[] moreNames = {name, name2};
+                nouns = moreNames;
+            }
+
+            else { 
+                nouns = names;
+            }
         }
         
 
