@@ -23,7 +23,7 @@ def high_achievers1(scores: dict) -> list:
     return high_achievers
 
 def high_achievers2(scores: dict) -> list:
-    return [name for name, s in scores.items() if s["math"] >= 80 and s["english"] >= 80]
+    return [name for name, s in scores.items() if s["math"] >= 80 and s["english"] >= 80] #example of ternary operation in python
 
 def partial_achievers1(scores: dict) -> list:
     partial_achievers = []
