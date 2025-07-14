@@ -1,5 +1,3 @@
-# tic_tac_toe.py
-
 from typing import List, Optional, Tuple
 
 def display_board(board: List[str]) -> None:
@@ -34,7 +32,7 @@ def get_winner(board: List[str]) -> Optional[str]:
 
 def is_full(board: List[str]) -> bool:
     """Returns True if the board is full."""
-    return all(cell != " " for cell in board)
+    return " " not in board
 
 def get_player_input(player: str, board: List[str]) -> Tuple[int, int]:
     """Prompts the current player for a valid move as row and column."""
@@ -67,5 +65,5 @@ def play_game() -> None:
     else:
         print("It's a tie!")
 
-if __name__ == "__main__":
-    play_game()
+
+play_game()
